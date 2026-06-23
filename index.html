@@ -1,1799 +1,285 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bonos Contribución – Sistema de Gestión</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<style>
-/* ── VARIABLES ── */
-:root {
-  --navy:    #0f1b35;
-  --gold:    #c8963e;
-  --gold-lt: #e8b86d;
-  --cream:   #faf7f2;
-  --white:   #ffffff;
-  --gray-1:  #f0ede8;
-  --gray-2:  #d4cfc8;
-  --gray-3:  #8a8278;
-  --red:     #c0392b;
-  --green:   #1a7a4a;
-  --blue:    #1e5fa8;
-  --shadow:  0 4px 20px rgba(15,27,53,0.12);
-  --radius:  10px;
-  --font-h:  'Georgia', serif;
-  --font-b:  system-ui, -apple-system, sans-serif;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: var(--font-b);
-  background: var(--cream);
-  color: var(--navy);
-  min-height: 100vh;
-}
-
-/* ── LAYOUT PRINCIPAL ── */
-#app { display: flex; flex-direction: column; min-height: 100vh; }
-
-/* ── HEADER ── */
-.app-header {
-  background: var(--navy);
-  color: var(--white);
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-  position: sticky; top: 0; z-index: 100;
-}
-.header-brand {
-  display: flex; align-items: center; gap: 12px;
-  font-family: var(--font-h);
-  font-size: 1.1rem; font-weight: bold; letter-spacing: .5px;
-}
-.header-brand span.accent { color: var(--gold); }
-.header-nav { display: flex; align-items: center; gap: 8px; }
-.header-nav button {
-  background: none; border: none; color: var(--gray-2);
-  padding: 6px 12px; border-radius: 6px; cursor: pointer;
-  font-size: .85rem; transition: all .2s;
-}
-.header-nav button:hover, .header-nav button.active {
-  background: rgba(200,150,62,.15); color: var(--gold-lt);
-}
-.header-nav button.btn-logout {
-  color: #e87e7e;
-}
-#user-info { font-size: .8rem; color: var(--gray-2); margin-right: 8px; }
-
-/* ── SIDEBAR ── */
-.app-layout { display: flex; flex: 1; }
-.sidebar {
-  width: 240px; background: var(--navy); min-height: calc(100vh - 64px);
-  padding: 20px 12px; flex-shrink: 0;
-  border-right: 1px solid rgba(255,255,255,.07);
-}
-.sidebar-section { margin-bottom: 24px; }
-.sidebar-label {
-  font-size: .7rem; font-weight: 700; letter-spacing: 1.5px;
-  color: var(--gray-3); text-transform: uppercase;
-  padding: 0 12px; margin-bottom: 8px;
-}
-.sidebar-btn {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 10px 12px; border: none; border-radius: 8px;
-  background: none; color: var(--gray-2); cursor: pointer;
-  font-size: .88rem; text-align: left; transition: all .2s;
-  margin-bottom: 2px;
-}
-.sidebar-btn:hover { background: rgba(255,255,255,.07); color: var(--white); }
-.sidebar-btn.active { background: rgba(200,150,62,.2); color: var(--gold-lt); }
-.sidebar-btn .icon { font-size: 1rem; width: 20px; text-align: center; }
-
-/* ── CONTENIDO PRINCIPAL ── */
-.main-content { flex: 1; padding: 28px; overflow-y: auto; }
-
-/* ── PÁGINAS ── */
-.page { display: none; }
-.page.active { display: block; }
-
-/* ── LOGIN / AUTH ── */
-.auth-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--navy) 0%, #1a3060 50%, #0a1226 100%);
-  display: flex; flex-direction: column;
-}
-.auth-hero {
-  width: 100%;
-  max-height: 260px; overflow: hidden;
-  position: relative;
-}
-.auth-hero img {
-  width: 100%; object-fit: cover; object-position: center 30%;
-  filter: brightness(.8) saturate(1.1);
-}
-.auth-hero-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 40%, rgba(15,27,53,.9));
-}
-.auth-center {
-  display: flex; align-items: center; justify-content: center;
-  flex: 1; padding: 24px;
-}
-.auth-card {
-  background: var(--white); border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.4);
-  width: 100%; max-width: 420px; overflow: hidden;
-}
-.auth-card-header {
-  background: var(--navy); padding: 28px 32px 20px;
-  text-align: center;
-}
-.auth-card-header h1 {
-  font-family: var(--font-h); color: var(--gold);
-  font-size: 1.4rem; margin-bottom: 4px;
-}
-.auth-card-header p { color: var(--gray-2); font-size: .85rem; }
-.auth-card-body { padding: 28px 32px; }
-.auth-tabs { display: flex; margin-bottom: 24px; gap: 8px; }
-.auth-tab {
-  flex: 1; padding: 8px; border: 2px solid var(--gray-2);
-  border-radius: 8px; background: none; cursor: pointer;
-  font-size: .85rem; transition: all .2s; color: var(--gray-3);
-}
-.auth-tab.active { border-color: var(--gold); background: rgba(200,150,62,.08); color: var(--navy); font-weight: 600; }
-
-/* ── FORMULARIOS ── */
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: .8rem; font-weight: 600; color: var(--gray-3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
-.form-control {
-  width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-2);
-  border-radius: 8px; font-size: .9rem; font-family: var(--font-b);
-  transition: border-color .2s; background: var(--white); color: var(--navy);
-}
-.form-control:focus { outline: none; border-color: var(--gold); }
-.form-control.error { border-color: var(--red); }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-/* ── BOTONES ── */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 10px 20px; border-radius: 8px; border: none;
-  cursor: pointer; font-size: .88rem; font-weight: 600;
-  transition: all .2s; text-decoration: none;
-}
-.btn-primary { background: var(--gold); color: var(--navy); }
-.btn-primary:hover { background: var(--gold-lt); }
-.btn-secondary { background: var(--navy); color: var(--white); }
-.btn-secondary:hover { background: #1a3060; }
-.btn-danger { background: var(--red); color: var(--white); }
-.btn-danger:hover { background: #a93226; }
-.btn-success { background: var(--green); color: var(--white); }
-.btn-success:hover { background: #155f3a; }
-.btn-outline { background: none; border: 1.5px solid var(--gold); color: var(--gold); }
-.btn-outline:hover { background: rgba(200,150,62,.1); }
-.btn-sm { padding: 6px 12px; font-size: .78rem; }
-.btn-full { width: 100%; justify-content: center; }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-
-/* ── CARDS ── */
-.card {
-  background: var(--white); border-radius: var(--radius);
-  box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px;
-}
-.card-header {
-  background: var(--navy); color: var(--white);
-  padding: 16px 20px; display: flex; align-items: center;
-  justify-content: space-between; gap: 12px;
-}
-.card-header h2 { font-family: var(--font-h); font-size: 1.1rem; color: var(--gold); }
-.card-body { padding: 20px; }
-
-/* ── STATS GRID ── */
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.stat-card {
-  background: var(--white); border-radius: var(--radius);
-  padding: 20px; box-shadow: var(--shadow);
-  border-left: 4px solid var(--gold); text-align: center;
-}
-.stat-card.green { border-color: var(--green); }
-.stat-card.red { border-color: var(--red); }
-.stat-card.blue { border-color: var(--blue); }
-.stat-value { font-size: 2rem; font-weight: 800; color: var(--navy); line-height: 1; }
-.stat-label { font-size: .75rem; color: var(--gray-3); margin-top: 6px; text-transform: uppercase; letter-spacing: .5px; }
-
-/* ── TABLAS ── */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-thead tr { background: var(--navy); }
-thead th { padding: 12px 14px; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--gold); text-align: left; }
-tbody tr { border-bottom: 1px solid var(--gray-1); transition: background .15s; }
-tbody tr:hover { background: var(--gray-1); }
-tbody td { padding: 11px 14px; font-size: .87rem; color: var(--navy); }
-
-/* ── BADGES ── */
-.badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px;
-  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-}
-.badge-green { background: rgba(26,122,74,.12); color: var(--green); }
-.badge-red { background: rgba(192,57,43,.12); color: var(--red); }
-.badge-orange { background: rgba(200,150,62,.15); color: #a06020; }
-.badge-blue { background: rgba(30,95,168,.12); color: var(--blue); }
-.badge-gray { background: var(--gray-1); color: var(--gray-3); }
-
-/* ── MODALES ── */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.5);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 500; padding: 20px; animation: fadeIn .2s;
-}
-.modal-overlay.hidden { display: none; }
-.modal {
-  background: var(--white); border-radius: 14px;
-  width: 100%; max-width: 560px; max-height: 90vh;
-  overflow-y: auto; box-shadow: 0 25px 80px rgba(0,0,0,.35);
-  animation: slideUp .2s;
-}
-.modal-header {
-  background: var(--navy); padding: 18px 24px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 1;
-}
-.modal-header h3 { color: var(--gold); font-family: var(--font-h); font-size: 1.05rem; }
-.modal-close { background: none; border: none; color: var(--gray-2); font-size: 1.4rem; cursor: pointer; line-height: 1; }
-.modal-close:hover { color: var(--white); }
-.modal-body { padding: 24px; }
-.modal-footer { padding: 16px 24px; border-top: 1px solid var(--gray-1); display: flex; gap: 10px; justify-content: flex-end; }
-
-/* ── TOASTS ── */
-#toast-container {
-  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
-  display: flex; flex-direction: column; gap: 10px; pointer-events: none;
-}
-.toast {
-  padding: 14px 20px; border-radius: 10px;
-  font-size: .88rem; font-weight: 500;
-  box-shadow: 0 8px 30px rgba(0,0,0,.2);
-  animation: slideUp .3s; max-width: 350px;
-  pointer-events: all;
-}
-.toast-success { background: var(--green); color: var(--white); }
-.toast-error { background: var(--red); color: var(--white); }
-.toast-info { background: var(--navy); color: var(--white); }
-
-/* ── SECCIÓN TÍTULO ── */
-.section-title {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
-}
-.section-title h1 { font-family: var(--font-h); font-size: 1.5rem; color: var(--navy); }
-
-/* ── BÚSQUEDA ── */
-.search-bar {
-  display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
-}
-.search-bar .form-control { min-width: 200px; flex: 1; }
-
-/* ── CERTIFICADO LIBRE DEUDA ── */
-.cert-container {
-  border: 3px solid var(--gold); border-radius: 16px;
-  padding: 32px; text-align: center; background: linear-gradient(135deg, #fffdf7, #fef9ed);
-  position: relative; overflow: hidden; margin-bottom: 24px;
-}
-.cert-container::before {
-  content: '★'; position: absolute; opacity: .04; font-size: 200px;
-  top: -40px; right: -20px; color: var(--gold); transform: rotate(20deg);
-}
-.cert-icon { font-size: 3rem; margin-bottom: 12px; }
-.cert-title { font-family: var(--font-h); font-size: 1.6rem; color: var(--navy); margin-bottom: 8px; }
-.cert-subtitle { color: var(--gray-3); font-size: .9rem; }
-
-/* ── BONO CARD ── */
-.bond-card {
-  border: 1.5px solid var(--gray-2); border-radius: var(--radius);
-  padding: 16px; margin-bottom: 12px; transition: border-color .2s;
-}
-.bond-card:hover { border-color: var(--gold); }
-.bond-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-.bond-number { font-weight: 800; color: var(--gold); font-size: 1rem; font-family: monospace; }
-.progress-bar-wrap { background: var(--gray-1); border-radius: 99px; height: 8px; overflow: hidden; margin: 8px 0; }
-.progress-bar { height: 100%; border-radius: 99px; transition: width .5s; background: var(--gold); }
-.progress-bar.full { background: var(--green); }
-
-/* ── EMPTY STATE ── */
-.empty-state { text-align: center; padding: 48px 24px; color: var(--gray-3); }
-.empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
-.empty-state p { font-size: .9rem; }
-
-/* ── LOADING ── */
-.spinner {
-  width: 36px; height: 36px; border: 3px solid var(--gray-2);
-  border-top-color: var(--gold); border-radius: 50%;
-  animation: spin .7s linear infinite; margin: 32px auto;
-}
-
-/* ── TABS ── */
-.tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--gray-2); margin-bottom: 24px; flex-wrap: wrap; }
-.tab-btn {
-  padding: 10px 18px; border: none; background: none; cursor: pointer;
-  font-size: .88rem; color: var(--gray-3); border-bottom: 2px solid transparent;
-  margin-bottom: -2px; transition: all .2s; border-radius: 6px 6px 0 0;
-}
-.tab-btn.active { color: var(--navy); border-bottom-color: var(--gold); font-weight: 600; background: rgba(200,150,62,.07); }
-.tab-pane { display: none; }
-.tab-pane.active { display: block; }
-
-/* ── IMPORT AREA ── */
-.drop-zone {
-  border: 2.5px dashed var(--gray-2); border-radius: var(--radius);
-  padding: 40px; text-align: center; cursor: pointer; transition: all .2s;
-}
-.drop-zone:hover, .drop-zone.drag-over { border-color: var(--gold); background: rgba(200,150,62,.05); }
-.drop-zone .icon { font-size: 2rem; color: var(--gray-3); margin-bottom: 8px; }
-
-/* ── ANIMATIONS ── */
-@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-@keyframes spin { to { transform: rotate(360deg) } }
-
-/* ── REPORT SECTION ── */
-.report-header {
-  background: linear-gradient(135deg, var(--navy), #1a3060);
-  border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px;
-  color: var(--white); display: flex; align-items: center; gap: 16px;
-}
-.report-header .student-avatar {
-  width: 52px; height: 52px; border-radius: 50%;
-  background: var(--gold); display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 1.2rem; color: var(--navy); flex-shrink: 0;
-}
-.report-header h2 { font-family: var(--font-h); font-size: 1.2rem; color: var(--gold-lt); margin-bottom: 4px; }
-.report-header p { font-size: .85rem; color: var(--gray-2); }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  .sidebar { display: none; }
-  .sidebar.mobile-open { display: block; position: fixed; z-index: 200; height: 100vh; overflow-y: auto; }
-  .main-content { padding: 16px; }
-  .form-row { grid-template-columns: 1fr; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-}
-
-/* ── HERO BANNER (BONO) ── */
-.hero-banner {
-  width: 100%; border-radius: var(--radius); overflow: hidden;
-  margin-bottom: 24px; box-shadow: var(--shadow); max-height: 180px;
-}
-.hero-banner img { width: 100%; object-fit: cover; object-position: center 20%; max-height: 180px; }
-
-/* ── INFO GRID ── */
-.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-.info-item { background: var(--gray-1); border-radius: 8px; padding: 12px; }
-.info-item label { display: block; font-size: .72rem; color: var(--gray-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
-.info-item span { font-weight: 600; font-size: .92rem; color: var(--navy); }
-
-/* ── PRINT ── */
-@media print {
-  .sidebar, .app-header, .btn, .search-bar { display: none !important; }
-  .main-content { padding: 0; }
-  .card { box-shadow: none; border: 1px solid #ccc; }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Bonos Contribución</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        .hidden-section { display: none; }
+    </style>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 font-sans">
 
-<!-- ═══════════════════════════════════════ -->
-<!--  AUTH SCREEN                           -->
-<!-- ═══════════════════════════════════════ -->
-<div id="auth-screen">
-  <div class="auth-container">
-    <div class="auth-hero" id="auth-hero-img">
-      <!-- imagen dinámica insertada por JS -->
-    </div>
-    <div class="auth-center">
-      <div class="auth-card">
-        <div class="auth-card-header">
-          <h1>⚜ Bonos Contribución</h1>
-          <p>Sistema de Gestión Escolar</p>
+    <nav class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
+        <div class="text-xl font-bold">Gestión Escolar - Bonos</div>
+        <div id="user-menu" class="hidden-section flex gap-4 items-center">
+            <span id="user-name-display" class="text-sm font-medium"></span>
+            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition">Cerrar Sesión</button>
         </div>
-        <div class="auth-card-body">
-          <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchAuthTab('login')">Iniciar Sesión</button>
-            <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
-          </div>
+    </nav>
 
-          <!-- LOGIN -->
-          <div id="tab-login">
-            <div class="form-group">
-              <label>Email</label>
-              <input class="form-control" id="login-email" type="email" placeholder="email@ejemplo.com">
+    <main class="container mx-auto p-6 max-w-6xl">
+        
+        <div id="alert-container" class="mb-4"></div>
+
+        <section id="auth-section" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg mt-10">
+            <img src="./bonobachi.png" alt="Bono Contribución" class="w-full h-auto mb-6 rounded shadow-sm border border-gray-200 object-cover">
+            <h2 class="text-2xl font-bold mb-6 text-center text-blue-900">Acceso al Sistema</h2>
+            
+            <form id="auth-form" class="space-y-4">
+                <input type="text" id="auth-name" placeholder="Nombre Completo (solo registro)" class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-500 hidden">
+                <input type="email" id="auth-email" placeholder="Correo Electrónico" required class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="auth-password" placeholder="Contraseña" required class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-500">
+                
+                <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded font-bold transition">Ingresar</button>
+            </form>
+            <div class="mt-4 text-center">
+                <button id="toggle-auth" class="text-sm text-blue-600 hover:underline">¿No tienes cuenta? Regístrate como Padre</button>
             </div>
-            <div class="form-group">
-              <label>Contraseña</label>
-              <input class="form-control" id="login-password" type="password" placeholder="••••••••">
-            </div>
-            <button class="btn btn-primary btn-full" onclick="doLogin()" id="btn-login">Ingresar</button>
-          </div>
+        </section>
 
-          <!-- REGISTRO PADRE -->
-          <div id="tab-register" style="display:none">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Nombre</label>
-                <input class="form-control" id="reg-firstname" type="text" placeholder="Juan">
-              </div>
-              <div class="form-group">
-                <label>Apellido</label>
-                <input class="form-control" id="reg-lastname" type="text" placeholder="Pérez">
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input class="form-control" id="reg-email" type="email" placeholder="padre@ejemplo.com">
-            </div>
-            <div class="form-group">
-              <label>Contraseña</label>
-              <input class="form-control" id="reg-password" type="password" placeholder="Mínimo 6 caracteres">
-            </div>
-            <button class="btn btn-primary btn-full" onclick="doRegister()">Crear Cuenta</button>
-            <p style="font-size:.78rem;color:var(--gray-3);margin-top:12px;text-align:center">
-              El administrador deberá vincular tu cuenta con tus hijos.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════ -->
-<!--  MAIN APP                              -->
-<!-- ═══════════════════════════════════════ -->
-<div id="main-app" style="display:none">
-  <div id="app">
-    <header class="app-header">
-      <div class="header-brand">
-        <span>⚜</span>
-        <span>Bonos <span class="accent">Contribución</span></span>
-      </div>
-      <div class="header-nav">
-        <span id="user-info"></span>
-        <button onclick="doLogout()" class="btn-logout">⏻ Salir</button>
-      </div>
-    </header>
-
-    <div class="app-layout">
-      <!-- SIDEBAR -->
-      <nav class="sidebar" id="sidebar">
-        <!-- Admin nav -->
-        <div id="admin-nav" style="display:none">
-          <div class="sidebar-section">
-            <div class="sidebar-label">Administración</div>
-            <button class="sidebar-btn active" onclick="showPage('dashboard')" id="nav-dashboard">
-              <span class="icon">📊</span> Dashboard
-            </button>
-            <button class="sidebar-btn" onclick="showPage('students')" id="nav-students">
-              <span class="icon">👨‍🎓</span> Alumnos
-            </button>
-            <button class="sidebar-btn" onclick="showPage('bonds')" id="nav-bonds">
-              <span class="icon">🎟️</span> Bonos
-            </button>
-            <button class="sidebar-btn" onclick="showPage('payments')" id="nav-payments">
-              <span class="icon">💳</span> Pagos
-            </button>
-          </div>
-          <div class="sidebar-section">
-            <div class="sidebar-label">Reportes</div>
-            <button class="sidebar-btn" onclick="showPage('search')" id="nav-search">
-              <span class="icon">🔍</span> Buscar Bonos
-            </button>
-            <button class="sidebar-btn" onclick="showPage('reports')" id="nav-reports">
-              <span class="icon">📋</span> Informes
-            </button>
-          </div>
-          <div class="sidebar-section">
-            <div class="sidebar-label">Configuración</div>
-            <button class="sidebar-btn" onclick="showPage('config')" id="nav-config">
-              <span class="icon">⚙️</span> Años / Cuotas
-            </button>
-            <button class="sidebar-btn" onclick="showPage('parents')" id="nav-parents">
-              <span class="icon">👨‍👩‍👧</span> Padres
-            </button>
-            <button class="sidebar-btn" onclick="showPage('import')" id="nav-import">
-              <span class="icon">📥</span> Importar CSV
-            </button>
-            <button class="sidebar-btn" onclick="showPage('audit')" id="nav-audit">
-              <span class="icon">📜</span> Auditoría
-            </button>
-          </div>
-        </div>
-
-        <!-- Padre nav -->
-        <div id="padre-nav" style="display:none">
-          <div class="sidebar-section">
-            <div class="sidebar-label">Consultas</div>
-            <button class="sidebar-btn active" onclick="showPage('parent-home')" id="nav-parent-home">
-              <span class="icon">🏠</span> Mis Hijos
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <!-- MAIN -->
-      <main class="main-content">
-
-        <!-- ─── DASHBOARD ADMIN ─── -->
-        <div class="page active" id="page-dashboard">
-          <div class="section-title">
-            <h1>Dashboard</h1>
-            <span id="dashboard-year-badge" class="badge badge-blue"></span>
-          </div>
-          <div id="hero-dashboard"></div>
-          <div class="stats-grid" id="stats-grid">
-            <div class="stat-card"><div class="spinner"></div></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><h2>Últimos Pagos Registrados</h2></div>
-            <div class="card-body">
-              <div class="table-wrap">
-                <table id="recent-payments-table">
-                  <thead><tr><th>Fecha</th><th>Alumno</th><th>N° Bono</th><th>Monto</th><th>Medio</th></tr></thead>
-                  <tbody><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── ALUMNOS ─── -->
-        <div class="page" id="page-students">
-          <div class="section-title">
-            <h1>Alumnos</h1>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-outline btn-sm" onclick="downloadStudentTemplate()">⬇ Plantilla CSV</button>
-              <button class="btn btn-primary" onclick="openModal('modal-student')">+ Nuevo Alumno</button>
-            </div>
-          </div>
-          <div class="search-bar">
-            <input class="form-control" id="student-search" placeholder="🔍 Buscar por nombre, apellido o DNI..." oninput="filterStudents()">
-          </div>
-          <div class="card">
-            <div class="card-body" style="padding:0">
-              <div class="table-wrap">
-                <table id="students-table">
-                  <thead><tr><th>DNI</th><th>Apellido y Nombre</th><th>Email</th><th>Bonos</th><th>Estado</th><th>Acciones</th></tr></thead>
-                  <tbody><tr><td colspan="6"><div class="spinner"></div></td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── BONOS ─── -->
-        <div class="page" id="page-bonds">
-          <div class="section-title">
-            <h1>Gestión de Bonos</h1>
-            <button class="btn btn-primary" onclick="openBondModal()">+ Asignar Bono</button>
-          </div>
-          <div class="search-bar">
-            <input class="form-control" id="bond-search" placeholder="🔍 Buscar por N° bono, alumno, grado...">
-            <select class="form-control" id="bond-filter-year" style="max-width:140px" onchange="loadBonds()">
-              <option value="">Todos los años</option>
-            </select>
-            <select class="form-control" id="bond-filter-status" style="max-width:140px" onchange="loadBonds()">
-              <option value="">Todos los estados</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="parcial">Parcial</option>
-              <option value="pagado">Pagado</option>
-            </select>
-          </div>
-          <div class="card">
-            <div class="card-body" style="padding:0">
-              <div class="table-wrap">
-                <table id="bonds-table">
-                  <thead><tr><th>N° Bono</th><th>Alumno</th><th>Año</th><th>Grado</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead>
-                  <tbody><tr><td colspan="9"><div class="spinner"></div></td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── PAGOS ─── -->
-        <div class="page" id="page-payments">
-          <div class="section-title">
-            <h1>Registrar Pago</h1>
-          </div>
-          <div class="card">
-            <div class="card-header"><h2>Buscar bono para registrar pago</h2></div>
-            <div class="card-body">
-              <div class="search-bar">
-                <input class="form-control" id="payment-bond-search" placeholder="N° de bono, nombre o DNI del alumno...">
-                <button class="btn btn-primary" onclick="searchBondForPayment()">Buscar</button>
-              </div>
-              <div id="payment-bond-result"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── BÚSQUEDA GLOBAL ─── -->
-        <div class="page" id="page-search">
-          <div class="section-title"><h1>Búsqueda Global de Bonos</h1></div>
-          <div class="card">
-            <div class="card-header"><h2>Consultar cualquier bono del sistema</h2></div>
-            <div class="card-body">
-              <div class="search-bar">
-                <input class="form-control" id="global-search-input" placeholder="N° bono (ej. 0042), nombre, apellido o DNI...">
-                <button class="btn btn-primary" onclick="doGlobalSearch()">🔍 Buscar</button>
-              </div>
-              <div id="global-search-results"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── INFORMES ─── -->
-        <div class="page" id="page-reports">
-          <div class="section-title"><h1>Informes</h1></div>
-          <div class="card">
-            <div class="card-body">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Año Lectivo</label>
-                  <select class="form-control" id="report-year">
-                    <option value="">Todos los años</option>
-                  </select>
+        <section id="admin-dashboard" class="hidden-section">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Panel de Administración</h2>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8 border-l-4 border-blue-500">
+                <h3 class="text-lg font-bold mb-4">Buscador Global</h3>
+                <div class="flex gap-4">
+                    <input type="text" id="search-input" placeholder="Buscar por Número de Bono, DNI o Alumno..." class="flex-1 p-3 border rounded focus:ring-2 focus:ring-blue-500">
+                    <button onclick="searchBonds()" class="bg-blue-600 text-white px-6 py-3 rounded font-bold hover:bg-blue-700 transition">Buscar</button>
                 </div>
-                <div class="form-group">
-                  <label>Grado / Curso</label>
-                  <select class="form-control" id="report-grade">
-                    <option value="">Todos los grados</option>
-                    <option>4to Primaria</option><option>5to Primaria</option><option>6to Primaria</option>
-                    <option>1ro Secundaria</option><option>2do Secundaria</option><option>3ro Secundaria</option>
-                    <option>4to Secundaria</option><option>5to Secundaria</option>
-                  </select>
+                <div id="search-results" class="mt-4 overflow-x-auto"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer" onclick="showAdminTab('config')">
+                    <h4 class="font-bold text-lg text-blue-900">Configuración Anual</h4>
+                    <p class="text-sm text-gray-600">Definir montos y cuotas por año.</p>
                 </div>
-              </div>
-              <button class="btn btn-primary" onclick="loadReport()">📊 Generar Informe</button>
+                <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer" onclick="showAdminTab('assign')">
+                    <h4 class="font-bold text-lg text-blue-900">Asignar Bonos</h4>
+                    <p class="text-sm text-gray-600">Asignar bonos anuales o extras (6to/7mo).</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer" onclick="showAdminTab('import')">
+                    <h4 class="font-bold text-lg text-blue-900">Importación CSV</h4>
+                    <p class="text-sm text-gray-600">Carga masiva de alumnos y bonos.</p>
+                </div>
             </div>
-          </div>
-          <div id="report-results"></div>
-        </div>
 
-        <!-- ─── CONFIGURACIÓN AÑOS ─── -->
-        <div class="page" id="page-config">
-          <div class="section-title">
-            <h1>Configuración Anual</h1>
-            <button class="btn btn-primary" onclick="openModal('modal-year-config')">+ Nuevo Año</button>
-          </div>
-          <div class="card">
-            <div class="card-body" style="padding:0">
-              <div class="table-wrap">
-                <table id="config-table">
-                  <thead><tr><th>Año</th><th>Monto del Bono</th><th>Cuotas</th><th>Valor por Cuota</th><th>Acciones</th></tr></thead>
-                  <tbody><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-                </table>
-              </div>
+            <div id="admin-content-area" class="bg-white p-6 rounded-lg shadow-md">
+                <p class="text-gray-500 italic">Selecciona una opción del menú superior para comenzar a gestionar.</p>
             </div>
-          </div>
-        </div>
+        </section>
 
-        <!-- ─── PADRES ─── -->
-        <div class="page" id="page-parents">
-          <div class="section-title"><h1>Gestión de Padres</h1></div>
-          <div class="card">
-            <div class="card-body" style="padding:0">
-              <div class="table-wrap">
-                <table id="parents-table">
-                  <thead><tr><th>Nombre</th><th>Email</th><th>Hijos vinculados</th><th>Acciones</th></tr></thead>
-                  <tbody><tr><td colspan="4"><div class="spinner"></div></td></tr></tbody>
-                </table>
-              </div>
+        <section id="parent-dashboard" class="hidden-section">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Portal para Padres</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold mb-4">Estado de Cuenta de Alumnos Vinculados</h3>
+                <button onclick="loadParentData()" class="mb-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Actualizar Información</button>
+                <div id="parent-students-list" class="overflow-x-auto">
+                    </div>
             </div>
-          </div>
-        </div>
-
-        <!-- ─── IMPORTAR CSV ─── -->
-        <div class="page" id="page-import">
-          <div class="section-title"><h1>Importar Datos</h1></div>
-          <div class="card">
-            <div class="card-header"><h2>Importar Alumnos desde CSV</h2></div>
-            <div class="card-body">
-              <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file').click()">
-                <div class="icon">📂</div>
-                <p><strong>Haz clic o arrastra un archivo CSV aquí</strong></p>
-                <p style="font-size:.8rem;color:var(--gray-3);margin-top:6px">Formato: dni, apellido, nombre, email (opcional)</p>
-              </div>
-              <input type="file" id="csv-file" accept=".csv,.xlsx" style="display:none" onchange="handleCSVUpload(event)">
-              <div id="import-preview" style="margin-top:20px"></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><h2>Plantilla de importación</h2></div>
-            <div class="card-body">
-              <p style="margin-bottom:12px;font-size:.88rem;color:var(--gray-3)">Descargá la plantilla CSV y completá los datos de los alumnos.</p>
-              <button class="btn btn-outline" onclick="downloadStudentTemplate()">⬇ Descargar Plantilla</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── AUDITORÍA ─── -->
-        <div class="page" id="page-audit">
-          <div class="section-title"><h1>Log de Auditoría</h1></div>
-          <div class="card">
-            <div class="card-body" style="padding:0">
-              <div class="table-wrap">
-                <table id="audit-table">
-                  <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Acción</th><th>Tabla</th><th>Detalle</th></tr></thead>
-                  <tbody><tr><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ─── VISTA PADRE ─── -->
-        <div class="page" id="page-parent-home">
-          <div class="section-title"><h1>Mis Hijos</h1></div>
-          <div id="parent-children-list"></div>
-        </div>
-
-        <!-- ─── DETALLE ALUMNO (REPORTE) ─── -->
-        <div class="page" id="page-student-report">
-          <div id="student-report-content"></div>
-        </div>
-
-      </main>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════ -->
-<!--  MODALES                               -->
-<!-- ═══════════════════════════════════════ -->
-
-<!-- Modal: Año de configuración -->
-<div class="modal-overlay hidden" id="modal-year-config">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="modal-year-title">Nueva Configuración de Año</h3>
-      <button class="modal-close" onclick="closeModal('modal-year-config')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="config-id">
-      <div class="form-group">
-        <label>Año Lectivo</label>
-        <input class="form-control" id="config-year" type="number" placeholder="2025" min="2020" max="2040">
-      </div>
-      <div class="form-group">
-        <label>Monto Total del Bono ($)</label>
-        <input class="form-control" id="config-amount" type="number" placeholder="240000" min="0">
-      </div>
-      <div class="form-group">
-        <label>Cantidad de Cuotas</label>
-        <input class="form-control" id="config-installments" type="number" placeholder="4" min="1" max="24">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-year-config')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveYearConfig()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Alumno -->
-<div class="modal-overlay hidden" id="modal-student">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="modal-student-title">Nuevo Alumno</h3>
-      <button class="modal-close" onclick="closeModal('modal-student')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="student-id">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nombre *</label>
-          <input class="form-control" id="student-firstname" type="text" placeholder="Juan">
-        </div>
-        <div class="form-group">
-          <label>Apellido *</label>
-          <input class="form-control" id="student-lastname" type="text" placeholder="Pérez">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>DNI *</label>
-        <input class="form-control" id="student-dni" type="text" placeholder="12345678">
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input class="form-control" id="student-email" type="email" placeholder="alumno@email.com">
-      </div>
-      <div class="form-group">
-        <label>Teléfono</label>
-        <input class="form-control" id="student-phone" type="text" placeholder="0387-xxxxxxx">
-      </div>
-      <div class="form-group">
-        <label>Observaciones</label>
-        <textarea class="form-control" id="student-notes" rows="2" placeholder="Notas opcionales..."></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-student')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveStudent()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Bono -->
-<div class="modal-overlay hidden" id="modal-bond">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Asignar Bono</h3>
-      <button class="modal-close" onclick="closeModal('modal-bond')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Alumno *</label>
-        <select class="form-control" id="bond-student-id">
-          <option value="">Seleccionar alumno...</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Año Lectivo *</label>
-        <select class="form-control" id="bond-year-id" onchange="updateBondAmount()">
-          <option value="">Seleccionar año...</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Grado *</label>
-        <select class="form-control" id="bond-grade">
-          <option value="">Seleccionar grado...</option>
-          <option>4to Primaria</option><option>5to Primaria</option><option>6to Primaria</option>
-          <option>1ro Secundaria</option><option>2do Secundaria</option><option>3ro Secundaria</option>
-          <option>4to Secundaria</option><option>5to Secundaria</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Número de Bono (0000-1000) *</label>
-        <input class="form-control" id="bond-number-input" type="text" placeholder="ej. 0042" maxlength="4" pattern="\d{4}">
-      </div>
-      <div class="form-group">
-        <label>¿Es bono extra de 5to Secundaria?</label>
-        <select class="form-control" id="bond-is-extra">
-          <option value="false">No (bono anual normal)</option>
-          <option value="true">Sí (bono extra)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Monto Total ($)</label>
-        <input class="form-control" id="bond-amount" type="number" readonly style="background:var(--gray-1)">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-bond')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveBond()">Asignar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Pago -->
-<div class="modal-overlay hidden" id="modal-payment">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Registrar Pago</h3>
-      <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="payment-bond-id">
-      <div id="payment-bond-info" style="background:var(--gray-1);border-radius:8px;padding:12px;margin-bottom:16px;font-size:.85rem;"></div>
-      <div class="form-group">
-        <label>Monto del Pago ($) *</label>
-        <input class="form-control" id="payment-amount" type="number" placeholder="60000" min="0.01">
-      </div>
-      <div class="form-group">
-        <label>Fecha *</label>
-        <input class="form-control" id="payment-date" type="date">
-      </div>
-      <div class="form-group">
-        <label>Medio de Pago *</label>
-        <select class="form-control" id="payment-method">
-          <option value="efectivo">Efectivo</option>
-          <option value="tarjeta">Tarjeta</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Observaciones</label>
-        <textarea class="form-control" id="payment-observations" rows="2" placeholder="Cuota N°1, recibo xxx..."></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-payment')">Cancelar</button>
-      <button class="btn btn-primary" onclick="savePayment()">Registrar Pago</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Vincular padre con alumno -->
-<div class="modal-overlay hidden" id="modal-link-parent">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Vincular Padre con Alumno</h3>
-      <button class="modal-close" onclick="closeModal('modal-link-parent')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="link-parent-id">
-      <div class="form-group">
-        <label>Alumno a vincular</label>
-        <select class="form-control" id="link-student-id">
-          <option value="">Seleccionar alumno...</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-link-parent')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveLinkParent()">Vincular</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast container -->
-<div id="toast-container"></div>
-
-<!-- ═══════════════════════════════════════ -->
-<!--  JAVASCRIPT                            -->
-<!-- ═══════════════════════════════════════ -->
-<script>
-// ─── CONFIGURACIÓN SUPABASE ─────────────────────────────────
-// REEMPLAZAR con tus valores reales de Supabase:
-const SUPABASE_URL = window.SUPABASE_URL || 'https://rkmgfxgyclxthlohyjng.supabase.co';
-const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrbWdmeGd5Y2x4dGhsb2h5am5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNjkyNTgsImV4cCI6MjA5Nzc0NTI1OH0.5o3r_vW6eFw1naGVG65hpJHzbC9kJV2qaGkjOTijjVg';
-
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ─── ESTADO GLOBAL ──────────────────────────────────────────
-let currentUser = null;
-let currentProfile = null;
-let allStudents = [];
-let allBonds = [];
-
-  // Stats
-  const [
-    { count: totalStudents },
-    { count: totalBonds },
-    { count: paidBonds },
-    { count: pendingBonds },
-  ] = await Promise.all([
-    sb.from('students').select('*', { count: 'exact', head: true }),
-    sb.from('bonds').select('*', { count: 'exact', head: true }),
-    sb.from('bonds').select('*', { count: 'exact', head: true }).eq('status', 'pagado'),
-    sb.from('bonds').select('*', { count: 'exact', head: true }).eq('status', 'pendiente'),
-  ]);
-
-  // Total recaudado
-  const { data: payData } = await sb.from('payments').select('amount');
-  const totalRecaudado = payData?.reduce((s, p) => s + parseFloat(p.amount), 0) || 0;
-
-  document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><div class="stat-value">${totalStudents || 0}</div><div class="stat-label">Alumnos Registrados</div></div>
-    <div class="stat-card blue"><div class="stat-value">${totalBonds || 0}</div><div class="stat-label">Bonos Asignados</div></div>
-    <div class="stat-card green"><div class="stat-value">${paidBonds || 0}</div><div class="stat-label">Bonos Pagados</div></div>
-    <div class="stat-card red"><div class="stat-value">${pendingBonds || 0}</div><div class="stat-label">Bonos Pendientes</div></div>
-    <div class="stat-card"><div class="stat-value">${fmt(totalRecaudado)}</div><div class="stat-label">Total Recaudado</div></div>
-  `;
-
-  // Últimos pagos
-  const { data: payments } = await sb.from('payments')
-    .select('*, bonds(bond_number, students(first_name, last_name))')
-    .order('created_at', { ascending: false }).limit(10);
-
-  const tbody = document.querySelector('#recent-payments-table tbody');
-  if (!payments?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Sin pagos registrados</td></tr>'; return; }
-  tbody.innerHTML = payments.map(p => `
-    <tr>
-      <td>${fmtDate(p.payment_date)}</td>
-      <td>${p.bonds?.students?.last_name || ''}, ${p.bonds?.students?.first_name || ''}</td>
-      <td><span class="badge badge-blue">#${p.bonds?.bond_number || ''}</span></td>
-      <td><strong>${fmt(p.amount)}</strong></td>
-      <td><span class="badge ${p.method === 'efectivo' ? 'badge-green' : 'badge-blue'}">${p.method}</span></td>
-    </tr>`).join('');
-}
-
-// ─── ALUMNOS ─────────────────────────────────────────────────
-async function loadStudents() {
-  const { data } = await sb.from('students').select('*, bonds(id,status)').order('last_name');
-  allStudents = data || [];
-  renderStudentsTable(allStudents);
-}
-
-function renderStudentsTable(students) {
-  const tbody = document.querySelector('#students-table tbody');
-  if (!students.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">👨‍🎓</div><p>No hay alumnos registrados</p></div></td></tr>'; return; }
-  tbody.innerHTML = students.map(s => {
-    const total = s.bonds?.length || 0;
-    const paid = s.bonds?.filter(b => b.status === 'pagado').length || 0;
-    const debtFree = total > 0 && total === paid;
-    return `<tr>
-      <td><code>${s.dni}</code></td>
-      <td><strong>${s.last_name}</strong>, ${s.first_name}</td>
-      <td>${s.email || '-'}</td>
-      <td>${paid}/${total}</td>
-      <td>${debtFree ? '<span class="badge badge-green">✓ Libre de deuda</span>' : total === 0 ? '<span class="badge badge-gray">Sin bonos</span>' : '<span class="badge badge-orange">Con saldo</span>'}</td>
-      <td>
-        <button class="btn btn-sm btn-outline" onclick="viewStudentReport('${s.id}')">📋 Ver</button>
-        <button class="btn btn-sm btn-secondary" onclick="editStudent('${s.id}')">✏️</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function filterStudents() {
-  const q = document.getElementById('student-search').value.toLowerCase();
-  renderStudentsTable(allStudents.filter(s =>
-    s.dni.toLowerCase().includes(q) ||
-    s.first_name.toLowerCase().includes(q) ||
-    s.last_name.toLowerCase().includes(q)
-  ));
-}
-
-function openModal(id) {
-  document.getElementById(id).classList.remove('hidden');
-}
-function closeModal(id) {
-  document.getElementById(id).classList.add('hidden');
-}
-
-async function saveStudent() {
-  const id = document.getElementById('student-id').value;
-  const data = {
-    first_name: document.getElementById('student-firstname').value.trim(),
-    last_name: document.getElementById('student-lastname').value.trim(),
-    dni: document.getElementById('student-dni').value.trim(),
-    email: document.getElementById('student-email').value.trim() || null,
-    phone: document.getElementById('student-phone').value.trim() || null,
-    notes: document.getElementById('student-notes').value.trim() || null,
-    created_by: currentProfile.id,
-  };
-  if (!data.first_name || !data.last_name || !data.dni) return toast('Nombre, Apellido y DNI son obligatorios', 'error');
-
-  let error;
-  if (id) {
-    ({ error } = await sb.from('students').update(data).eq('id', id));
-    await logAudit('UPDATE', 'students', id, null, data);
-  } else {
-    ({ error } = await sb.from('students').insert(data));
-    await logAudit('INSERT', 'students', null, null, data);
-  }
-  if (error) return toast(error.message, 'error');
-  toast('Alumno guardado correctamente', 'success');
-  closeModal('modal-student');
-  clearStudentForm();
-  loadStudents();
-}
-
-function clearStudentForm() {
-  ['student-id','student-firstname','student-lastname','student-dni','student-email','student-phone','student-notes'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.getElementById('modal-student-title').textContent = 'Nuevo Alumno';
-}
-
-async function editStudent(id) {
-  const { data: s } = await sb.from('students').select('*').eq('id', id).single();
-  document.getElementById('student-id').value = s.id;
-  document.getElementById('student-firstname').value = s.first_name;
-  document.getElementById('student-lastname').value = s.last_name;
-  document.getElementById('student-dni').value = s.dni;
-  document.getElementById('student-email').value = s.email || '';
-  document.getElementById('student-phone').value = s.phone || '';
-  document.getElementById('student-notes').value = s.notes || '';
-  document.getElementById('modal-student-title').textContent = 'Editar Alumno';
-  openModal('modal-student');
-}
-
-// ─── BONOS ───────────────────────────────────────────────────
-async function loadBonds() {
-  const yearFilter = document.getElementById('bond-filter-year')?.value;
-  const statusFilter = document.getElementById('bond-filter-status')?.value;
-
-  let query = sb.from('bonds')
-    .select('*, students(first_name, last_name, dni), year_config(year)')
-    .order('bond_number');
-
-  if (yearFilter) query = query.eq('year_config_id', yearFilter);
-  if (statusFilter) query = query.eq('status', statusFilter);
-
-  const { data } = await query;
-  allBonds = data || [];
-
-  // populate year filter
-  const { data: configs } = await sb.from('year_config').select('id,year').order('year', { ascending: false });
-  const yearSelect = document.getElementById('bond-filter-year');
-  if (yearSelect && configs) {
-    const current = yearSelect.value;
-    yearSelect.innerHTML = '<option value="">Todos los años</option>' +
-      configs.map(c => `<option value="${c.id}" ${c.id === current ? 'selected' : ''}>${c.year}</option>`).join('');
-  }
-
-  renderBondsTable(allBonds);
-}
-
-function renderBondsTable(bonds) {
-  const tbody = document.querySelector('#bonds-table tbody');
-  if (!bonds.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">🎟️</div><p>No hay bonos</p></div></td></tr>'; return; }
-  tbody.innerHTML = bonds.map(b => `
-    <tr>
-      <td><span class="badge badge-blue">#${b.bond_number}</span></td>
-      <td><strong>${b.students?.last_name || ''}</strong>, ${b.students?.first_name || ''}</td>
-      <td>${b.year_config?.year || ''}</td>
-      <td>${b.grade}${b.is_extra ? ' <span class="badge badge-orange">Extra</span>' : ''}</td>
-      <td>${fmt(b.total_amount)}</td>
-      <td>${fmt(b.amount_paid)}</td>
-      <td>${fmt(b.total_amount - b.amount_paid)}</td>
-      <td>${statusBadge(b.status)}</td>
-      <td>
-        <button class="btn btn-sm btn-success" onclick="openPaymentModal('${b.id}')">💳 Pagar</button>
-        <button class="btn btn-sm btn-outline" onclick="viewStudentReport('${b.student_id}')">📋</button>
-      </td>
-    </tr>`).join('');
-}
-
-async function openBondModal() {
-  // Load students and years
-  if (!allStudents.length) await loadStudents();
-  const { data: configs } = await sb.from('year_config').select('*').order('year', { ascending: false });
-
-  document.getElementById('bond-student-id').innerHTML =
-    '<option value="">Seleccionar alumno...</option>' +
-    allStudents.map(s => `<option value="${s.id}">${s.last_name}, ${s.first_name} (${s.dni})</option>`).join('');
-
-  document.getElementById('bond-year-id').innerHTML =
-    '<option value="">Seleccionar año...</option>' +
-    (configs || []).map(c => `<option value="${c.id}" data-amount="${c.total_amount}">${c.year} - ${fmt(c.total_amount)}</option>`).join('');
-
-  openModal('modal-bond');
-}
-
-function updateBondAmount() {
-  const sel = document.getElementById('bond-year-id');
-  const opt = sel.options[sel.selectedIndex];
-  document.getElementById('bond-amount').value = opt?.dataset?.amount || '';
-}
-
-async function saveBond() {
-  const studentId = document.getElementById('bond-student-id').value;
-  const yearId = document.getElementById('bond-year-id').value;
-  const grade = document.getElementById('bond-grade').value;
-  const bondNumber = document.getElementById('bond-number-input').value.padStart(4, '0');
-  const isExtra = document.getElementById('bond-is-extra').value === 'true';
-  const amount = parseFloat(document.getElementById('bond-amount').value);
-
-  if (!studentId || !yearId || !grade || !bondNumber || isNaN(amount)) return toast('Completá todos los campos', 'error');
-  if (!/^\d{4}$/.test(bondNumber)) return toast('El número de bono debe tener 4 dígitos', 'error');
-
-  const { error } = await sb.from('bonds').insert({
-    bond_number: bondNumber,
-    student_id: studentId,
-    year_config_id: yearId,
-    grade,
-    is_extra: isExtra,
-    total_amount: amount,
-    created_by: currentProfile.id,
-  });
-
-  if (error) return toast(error.message === 'duplicate key value violates unique constraint "bonds_bond_number_key"'
-    ? `El número de bono ${bondNumber} ya está en uso` : error.message, 'error');
-
-  await logAudit('INSERT', 'bonds', null, null, { bond_number: bondNumber, grade });
-  toast('Bono asignado correctamente', 'success');
-  closeModal('modal-bond');
-  loadBonds();
-}
-
-// ─── PAGOS ───────────────────────────────────────────────────
-async function openPaymentModal(bondId) {
-  const { data: bond } = await sb.from('bonds')
-    .select('*, students(first_name, last_name), year_config(year, installments)')
-    .eq('id', bondId).single();
-
-  document.getElementById('payment-bond-id').value = bondId;
-  document.getElementById('payment-date').value = new Date().toISOString().split('T')[0];
-
-  const saldo = bond.total_amount - bond.amount_paid;
-  const cuotaVal = bond.total_amount / (bond.year_config?.installments || 4);
-
-  document.getElementById('payment-bond-info').innerHTML = `
-    <strong>Bono #${bond.bond_number}</strong> — ${bond.students?.last_name}, ${bond.students?.first_name}<br>
-    ${bond.grade} • Año ${bond.year_config?.year}<br>
-    Total: ${fmt(bond.total_amount)} | Pagado: ${fmt(bond.amount_paid)} | <strong>Saldo: ${fmt(saldo)}</strong><br>
-    Valor de cuota sugerido: ${fmt(cuotaVal)}
-  `;
-  document.getElementById('payment-amount').value = cuotaVal.toFixed(0);
-  openModal('modal-payment');
-}
-
-async function searchBondForPayment() {
-  const q = document.getElementById('payment-bond-search').value.trim();
-  if (!q) return;
-  const { data: bonds } = await sb.from('bonds')
-    .select('*, students(first_name, last_name, dni), year_config(year)')
-    .or(`bond_number.ilike.%${q}%,students.last_name.ilike.%${q}%,students.first_name.ilike.%${q}%,students.dni.ilike.%${q}%`);
-
-  const res = document.getElementById('payment-bond-result');
-  if (!bonds?.length) { res.innerHTML = '<p style="color:var(--red);margin-top:12px">No se encontraron bonos</p>'; return; }
-
-  res.innerHTML = `<div class="table-wrap" style="margin-top:16px">
-    <table>
-      <thead><tr><th>N° Bono</th><th>Alumno</th><th>Año/Grado</th><th>Saldo</th><th>Estado</th><th>Acción</th></tr></thead>
-      <tbody>${bonds.map(b => `
-        <tr>
-          <td><span class="badge badge-blue">#${b.bond_number}</span></td>
-          <td>${b.students?.last_name}, ${b.students?.first_name}</td>
-          <td>${b.year_config?.year} / ${b.grade}</td>
-          <td>${fmt(b.total_amount - b.amount_paid)}</td>
-          <td>${statusBadge(b.status)}</td>
-          <td><button class="btn btn-sm btn-success" onclick="openPaymentModal('${b.id}')" ${b.status === 'pagado' ? 'disabled' : ''}>💳 Pagar</button></td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-  </div>`;
-}
-
-async function savePayment() {
-  const bondId = document.getElementById('payment-bond-id').value;
-  const amount = parseFloat(document.getElementById('payment-amount').value);
-  const date = document.getElementById('payment-date').value;
-  const method = document.getElementById('payment-method').value;
-  const obs = document.getElementById('payment-observations').value.trim();
-
-  if (!bondId || isNaN(amount) || amount <= 0 || !date) return toast('Completá todos los campos requeridos', 'error');
-
-  // Check no exceed total
-  const { data: bond } = await sb.from('bonds').select('total_amount, amount_paid').eq('id', bondId).single();
-  const remaining = bond.total_amount - bond.amount_paid;
-  if (amount > remaining + 0.01) return toast(`El pago excede el saldo de ${fmt(remaining)}`, 'error');
-
-  const { error } = await sb.from('payments').insert({
-    bond_id: bondId,
-    amount,
-    payment_date: date,
-    method,
-    observations: obs || null,
-    registered_by: currentProfile.id,
-  });
-
-  if (error) return toast(error.message, 'error');
-  await logAudit('INSERT', 'payments', bondId, null, { amount, method, date });
-  toast('Pago registrado correctamente ✓', 'success');
-  closeModal('modal-payment');
-  if (currentProfile.role === 'admin') loadDashboard();
-}
-
-// ─── BÚSQUEDA GLOBAL ─────────────────────────────────────────
-async function doGlobalSearch() {
-  const q = document.getElementById('global-search-input').value.trim();
-  if (!q) return;
-
-  const res = document.getElementById('global-search-results');
-  res.innerHTML = '<div class="spinner"></div>';
-
-  const { data: bonds } = await sb.from('bonds')
-    .select(`*, students(first_name, last_name, dni), year_config(year, total_amount, installments),
-             payments(id, amount, payment_date, method, observations)`)
-    .or(`bond_number.ilike.%${q}%`)
-    .order('bond_number');
-
-  // También buscar por nombre/DNI
-  const { data: byStudent } = await sb.from('bonds')
-    .select(`*, students!inner(first_name, last_name, dni), year_config(year),
-             payments(id, amount, payment_date, method, observations)`)
-    .or(`students.last_name.ilike.%${q}%,students.first_name.ilike.%${q}%,students.dni.ilike.%${q}%`);
-
-  const all = [...(bonds || []), ...(byStudent || [])];
-  const unique = [...new Map(all.map(b => [b.id, b])).values()];
-
-  if (!unique.length) { res.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No se encontraron resultados</p></div>'; return; }
-
-  res.innerHTML = unique.map(b => {
-    const paymentsHtml = b.payments?.length
-      ? b.payments.map(p => `<tr><td>${fmtDate(p.payment_date)}</td><td>${fmt(p.amount)}</td><td>${p.method}</td><td>${p.observations || '-'}</td></tr>`).join('')
-      : '<tr><td colspan="4" style="text-align:center;color:var(--gray-3)">Sin pagos</td></tr>';
-    return `
-    <div class="bond-card" style="margin-bottom:16px">
-      <div class="bond-card-header">
-        <div>
-          <span class="bond-number">#${b.bond_number}</span>
-          <span style="margin-left:12px;font-size:.85rem;color:var(--gray-3)">${b.grade} • ${b.year_config?.year}</span>
-        </div>
-        ${statusBadge(b.status)}
-      </div>
-      <div class="info-grid" style="margin-bottom:12px">
-        <div class="info-item"><label>Alumno</label><span>${b.students?.last_name}, ${b.students?.first_name}</span></div>
-        <div class="info-item"><label>DNI</label><span>${b.students?.dni}</span></div>
-        <div class="info-item"><label>Total</label><span>${fmt(b.total_amount)}</span></div>
-        <div class="info-item"><label>Pagado</label><span>${fmt(b.amount_paid)}</span></div>
-        <div class="info-item"><label>Saldo</label><span style="color:${b.status==='pagado'?'var(--green)':'var(--red)'}"><strong>${fmt(b.total_amount - b.amount_paid)}</strong></span></div>
-        <div class="info-item"><label>Tipo</label><span>${b.is_extra ? 'Extra 5to' : 'Anual'}</span></div>
-      </div>
-      <div class="progress-bar-wrap"><div class="progress-bar ${b.status==='pagado'?'full':''}" style="width:${Math.min(100,(b.amount_paid/b.total_amount*100))}%"></div></div>
-      <details style="margin-top:12px">
-        <summary style="cursor:pointer;font-size:.82rem;color:var(--gray-3)">Ver historial de pagos (${b.payments?.length || 0})</summary>
-        <div class="table-wrap" style="margin-top:10px">
-          <table><thead><tr><th>Fecha</th><th>Monto</th><th>Medio</th><th>Observaciones</th></tr></thead>
-          <tbody>${paymentsHtml}</tbody></table>
-        </div>
-      </details>
-      <div style="margin-top:10px">
-        <button class="btn btn-sm btn-success" onclick="openPaymentModal('${b.id}')" ${b.status==='pagado'?'disabled':''}>💳 Registrar Pago</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ─── REPORTE ALUMNO ──────────────────────────────────────────
-async function viewStudentReport(studentId) {
-  showPage('student-report');
-  const content = document.getElementById('student-report-content');
-  content.innerHTML = '<div class="spinner"></div>';
-
-  const [
-    { data: student },
-    { data: bonds },
-    { data: payments }
-  ] = await Promise.all([
-    sb.from('students').select('*').eq('id', studentId).single(),
-    sb.from('bonds').select('*, year_config(year, total_amount, installments)').eq('student_id', studentId).order('bond_number'),
-    sb.from('payments').select('*, bonds(bond_number, grade, year_config(year))').eq('bonds.student_id', studentId).order('payment_date', { ascending: false })
-  ]);
-
-  const initials = `${student.first_name[0]}${student.last_name[0]}`.toUpperCase();
-  const totalBonds = bonds?.length || 0;
-  const paidBonds = bonds?.filter(b => b.status === 'pagado').length || 0;
-  const debtFree = totalBonds > 0 && totalBonds === paidBonds;
-  const totalAmount = bonds?.reduce((s,b) => s + parseFloat(b.total_amount), 0) || 0;
-  const totalPaid = bonds?.reduce((s,b) => s + parseFloat(b.amount_paid), 0) || 0;
-
-  // All payments for this student's bonds
-  const { data: allPayments } = await sb.from('payments')
-    .select('*, bonds!inner(bond_number, grade, student_id, year_config(year))')
-    .eq('bonds.student_id', studentId)
-    .order('payment_date', { ascending: false });
-
-  content.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button class="btn btn-outline btn-sm" onclick="history.back()">← Volver</button>
-      <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Imprimir</button>
-    </div>
-
-    <div class="report-header">
-      <div class="student-avatar">${initials}</div>
-      <div>
-        <h2>${student.last_name}, ${student.first_name}</h2>
-        <p>DNI: ${student.dni} ${student.email ? '• ' + student.email : ''}</p>
-      </div>
-    </div>
-
-    ${debtFree ? `
-    <div class="cert-container">
-      <div class="cert-icon">✅</div>
-      <div class="cert-title">LIBRE DE DEUDA</div>
-      <div class="cert-subtitle">El alumno tiene todos sus bonos cancelados</div>
-    </div>` : `
-    <div class="cert-container" style="border-color:var(--red)">
-      <div class="cert-icon">⚠️</div>
-      <div class="cert-title" style="color:var(--red)">CON SALDO PENDIENTE</div>
-      <div class="cert-subtitle">Saldo total: <strong>${fmt(totalAmount - totalPaid)}</strong></div>
-    </div>`}
-
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value">${totalBonds}</div><div class="stat-label">Bonos Asignados</div></div>
-      <div class="stat-card green"><div class="stat-value">${paidBonds}</div><div class="stat-label">Pagados</div></div>
-      <div class="stat-card red"><div class="stat-value">${totalBonds - paidBonds}</div><div class="stat-label">Pendientes</div></div>
-      <div class="stat-card"><div class="stat-value">${fmt(totalPaid)}</div><div class="stat-label">Total Abonado</div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><h2>Detalle de Bonos por Año</h2></div>
-      <div class="card-body" style="padding:0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>N° Bono</th><th>Año</th><th>Grado</th><th>Tipo</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>${currentProfile?.role === 'admin' ? 'Acción' : ''}</th></tr></thead>
-            <tbody>
-              ${bonds?.map(b => `
-              <tr>
-                <td><span class="badge badge-blue">#${b.bond_number}</span></td>
-                <td>${b.year_config?.year || '-'}</td>
-                <td>${b.grade}</td>
-                <td>${b.is_extra ? '<span class="badge badge-orange">Extra</span>' : 'Anual'}</td>
-                <td>${fmt(b.total_amount)}</td>
-                <td>${fmt(b.amount_paid)}</td>
-                <td><strong>${fmt(b.total_amount - b.amount_paid)}</strong></td>
-                <td>${statusBadge(b.status)}</td>
-                <td>${currentProfile?.role === 'admin' ? `<button class="btn btn-sm btn-success" onclick="openPaymentModal('${b.id}')" ${b.status==='pagado'?'disabled':''}>💳</button>` : ''}</td>
-              </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--gray-3)">Sin bonos asignados</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><h2>Historial Cronológico de Pagos</h2></div>
-      <div class="card-body" style="padding:0">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Fecha</th><th>N° Bono</th><th>Grado / Año</th><th>Monto</th><th>Medio</th><th>Observaciones</th></tr></thead>
-            <tbody>
-              ${allPayments?.map(p => `
-              <tr>
-                <td>${fmtDate(p.payment_date)}</td>
-                <td><span class="badge badge-blue">#${p.bonds?.bond_number || ''}</span></td>
-                <td>${p.bonds?.grade || ''} / ${p.bonds?.year_config?.year || ''}</td>
-                <td><strong>${fmt(p.amount)}</strong></td>
-                <td><span class="badge ${p.method === 'efectivo' ? 'badge-green' : 'badge-blue'}">${p.method}</span></td>
-                <td>${p.observations || '-'}</td>
-              </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--gray-3)">Sin pagos registrados</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ─── CONFIGURACIÓN AÑOS ──────────────────────────────────────
-async function loadYearConfigs() {
-  const { data } = await sb.from('year_config').select('*').order('year', { ascending: false });
-  const tbody = document.querySelector('#config-table tbody');
-  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Sin configuraciones</div></td></tr>'; return; }
-  tbody.innerHTML = data.map(c => `
-    <tr>
-      <td><strong>${c.year}</strong></td>
-      <td>${fmt(c.total_amount)}</td>
-      <td>${c.installments}</td>
-      <td>${fmt(c.total_amount / c.installments)}</td>
-      <td>
-        <button class="btn btn-sm btn-secondary" onclick="editYearConfig('${c.id}','${c.year}','${c.total_amount}','${c.installments}')">✏️ Editar</button>
-      </td>
-    </tr>`).join('');
-}
-
-function editYearConfig(id, year, amount, installments) {
-  document.getElementById('config-id').value = id;
-  document.getElementById('config-year').value = year;
-  document.getElementById('config-amount').value = amount;
-  document.getElementById('config-installments').value = installments;
-  document.getElementById('modal-year-title').textContent = `Editar Año ${year}`;
-  openModal('modal-year-config');
-}
-
-async function saveYearConfig() {
-  const id = document.getElementById('config-id').value;
-  const year = parseInt(document.getElementById('config-year').value);
-  const amount = parseFloat(document.getElementById('config-amount').value);
-  const inst = parseInt(document.getElementById('config-installments').value);
-  if (!year || !amount || !inst) return toast('Completá todos los campos', 'error');
-
-  let error;
-  if (id) {
-    ({ error } = await sb.from('year_config').update({ year, total_amount: amount, installments: inst }).eq('id', id));
-  } else {
-    ({ error } = await sb.from('year_config').insert({ year, total_amount: amount, installments: inst, created_by: currentProfile.id }));
-  }
-  if (error) return toast(error.message, 'error');
-  toast('Configuración guardada', 'success');
-  closeModal('modal-year-config');
-  document.getElementById('config-id').value = '';
-  loadYearConfigs();
-}
-
-// ─── PADRES ──────────────────────────────────────────────────
-async function loadParents() {
-  const { data: parents } = await sb.from('profiles').select('*, parent_students(student_id, students(first_name, last_name))').eq('role', 'padre');
-  const tbody = document.querySelector('#parents-table tbody');
-  if (!parents?.length) { tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">Sin padres registrados</div></td></tr>'; return; }
-  tbody.innerHTML = parents.map(p => {
-    const hijos = p.parent_students?.map(ps => `${ps.students?.last_name}, ${ps.students?.first_name}`).join('; ') || 'Sin vincular';
-    return `<tr>
-      <td><strong>${p.full_name}</strong></td>
-      <td>${p.email}</td>
-      <td>${hijos}</td>
-      <td>
-        <button class="btn btn-sm btn-primary" onclick="openLinkParent('${p.id}')">🔗 Vincular hijo</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-async function openLinkParent(parentId) {
-  document.getElementById('link-parent-id').value = parentId;
-  if (!allStudents.length) await loadStudents();
-  document.getElementById('link-student-id').innerHTML =
-    '<option value="">Seleccionar alumno...</option>' +
-    allStudents.map(s => `<option value="${s.id}">${s.last_name}, ${s.first_name} (DNI: ${s.dni})</option>`).join('');
-  openModal('modal-link-parent');
-}
-
-async function saveLinkParent() {
-  const parentId = document.getElementById('link-parent-id').value;
-  const studentId = document.getElementById('link-student-id').value;
-  if (!studentId) return toast('Seleccioná un alumno', 'error');
-  const { error } = await sb.from('parent_students').insert({ parent_id: parentId, student_id: studentId, linked_by: currentProfile.id });
-  if (error) return toast(error.message.includes('unique') ? 'Ya está vinculado' : error.message, 'error');
-  toast('Vinculación exitosa', 'success');
-  closeModal('modal-link-parent');
-  loadParents();
-}
-
-// ─── VISTA PADRE ─────────────────────────────────────────────
-async function loadParentHome() {
-  const container = document.getElementById('parent-children-list');
-  container.innerHTML = '<div class="spinner"></div>';
-
-  const { data: links } = await sb.from('parent_students')
-    .select('*, students(*, bonds(id, status, total_amount, amount_paid))')
-    .eq('parent_id', currentProfile.id);
-
-  if (!links?.length) {
-    container.innerHTML = `
-      <div class="empty-state" style="padding:64px 24px">
-        <div class="icon">👨‍👩‍👧</div>
-        <p>No tenés alumnos vinculados a tu cuenta.</p>
-        <p style="margin-top:8px;font-size:.82rem">Contactá al administrador del colegio para que vincule tu cuenta con la de tus hijos.</p>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = links.map(l => {
-    const s = l.students;
-    const total = s.bonds?.length || 0;
-    const paid = s.bonds?.filter(b => b.status === 'pagado').length || 0;
-    const debtFree = total > 0 && total === paid;
-    return `
-    <div class="card" style="cursor:pointer" onclick="viewStudentReport('${s.id}')">
-      <div class="card-header">
-        <h2>${s.last_name}, ${s.first_name}</h2>
-        ${debtFree ? '<span class="badge badge-green">✓ Libre de deuda</span>' : '<span class="badge badge-orange">Con saldo pendiente</span>'}
-      </div>
-      <div class="card-body">
-        <div class="stats-grid" style="margin:0">
-          <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Bonos</div></div>
-          <div class="stat-card green"><div class="stat-value">${paid}</div><div class="stat-label">Pagados</div></div>
-          <div class="stat-card red"><div class="stat-value">${total - paid}</div><div class="stat-label">Pendientes</div></div>
-        </div>
-        <p style="font-size:.82rem;color:var(--gray-3);margin-top:12px">Hacé clic para ver el detalle completo →</p>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ─── INFORMES ────────────────────────────────────────────────
-async function prepareReportFilters() {
-  const { data: configs } = await sb.from('year_config').select('id,year').order('year', { ascending: false });
-  const yearSel = document.getElementById('report-year');
-  yearSel.innerHTML = '<option value="">Todos los años</option>' +
-    (configs || []).map(c => `<option value="${c.id}">${c.year}</option>`).join('');
-}
-
-async function loadReport() {
-  const yearId = document.getElementById('report-year').value;
-  const grade = document.getElementById('report-grade').value;
-  const res = document.getElementById('report-results');
-  res.innerHTML = '<div class="spinner"></div>';
-
-  let query = sb.from('bonds')
-    .select('*, students(first_name, last_name, dni), year_config(year, total_amount)')
-    .order('last_name', { foreignTable: 'students' });
-
-  if (yearId) query = query.eq('year_config_id', yearId);
-  if (grade) query = query.eq('grade', grade);
-
-  const { data: bonds } = await query;
-  if (!bonds?.length) { res.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Sin datos para los filtros seleccionados</p></div>'; return; }
-
-  const totalBonds = bonds.length;
-  const paidBonds = bonds.filter(b => b.status === 'pagado').length;
-  const totalAmount = bonds.reduce((s,b) => s + parseFloat(b.total_amount), 0);
-  const totalPaid = bonds.reduce((s,b) => s + parseFloat(b.amount_paid), 0);
-
-  res.innerHTML = `
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value">${totalBonds}</div><div class="stat-label">Total Bonos</div></div>
-      <div class="stat-card green"><div class="stat-value">${paidBonds}</div><div class="stat-label">Pagados</div></div>
-      <div class="stat-card red"><div class="stat-value">${totalBonds - paidBonds}</div><div class="stat-label">Pendientes</div></div>
-      <div class="stat-card blue"><div class="stat-value">${fmt(totalPaid)}</div><div class="stat-label">Recaudado</div></div>
-      <div class="stat-card"><div class="stat-value">${fmt(totalAmount - totalPaid)}</div><div class="stat-label">Saldo Pendiente</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <h2>Detalle del Informe</h2>
-        <button class="btn btn-sm btn-outline" onclick="exportReportCSV()">⬇ Exportar CSV</button>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div class="table-wrap">
-          <table id="report-table">
-            <thead><tr><th>N° Bono</th><th>Alumno</th><th>DNI</th><th>Grado</th><th>Año</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead>
-            <tbody>
-              ${bonds.map(b => `
-              <tr>
-                <td>#${b.bond_number}</td>
-                <td>${b.students?.last_name}, ${b.students?.first_name}</td>
-                <td>${b.students?.dni}</td>
-                <td>${b.grade}</td>
-                <td>${b.year_config?.year}</td>
-                <td>${fmt(b.total_amount)}</td>
-                <td>${fmt(b.amount_paid)}</td>
-                <td>${fmt(b.total_amount - b.amount_paid)}</td>
-                <td>${statusBadge(b.status)}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
-
-  window._reportData = bonds;
-}
-
-function exportReportCSV() {
-  if (!window._reportData) return;
-  const rows = [['N° Bono', 'Apellido', 'Nombre', 'DNI', 'Grado', 'Año', 'Total', 'Pagado', 'Saldo', 'Estado']];
-  window._reportData.forEach(b => rows.push([
-    b.bond_number, b.students?.last_name, b.students?.first_name, b.students?.dni,
-    b.grade, b.year_config?.year, b.total_amount, b.amount_paid,
-    (b.total_amount - b.amount_paid), b.status
-  ]));
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csv);
-  a.download = 'informe_bonos.csv';
-  a.click();
-}
-
-// ─── AUDITORÍA ───────────────────────────────────────────────
-async function loadAuditLog() {
-  const { data } = await sb.from('audit_log')
-    .select('*, profiles(full_name)')
-    .order('created_at', { ascending: false }).limit(100);
-  const tbody = document.querySelector('#audit-table tbody');
-  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">Sin registros de auditoría</div></td></tr>'; return; }
-  tbody.innerHTML = data.map(a => `
-    <tr>
-      <td style="white-space:nowrap;font-size:.8rem">${new Date(a.created_at).toLocaleString('es-AR')}</td>
-      <td>${a.profiles?.full_name || 'Sistema'}</td>
-      <td><span class="badge ${a.action === 'INSERT' ? 'badge-green' : a.action === 'DELETE' ? 'badge-red' : 'badge-blue'}">${a.action}</span></td>
-      <td><code style="font-size:.78rem">${a.table_name}</code></td>
-      <td style="font-size:.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis">${JSON.stringify(a.new_data || a.old_data || {})}</td>
-    </tr>`).join('');
-}
-
-async function logAudit(action, table, recordId, oldData, newData) {
-  try {
-    await sb.from('audit_log').insert({
-      user_id: currentProfile?.id,
-      action, table_name: table,
-      record_id: recordId || null,
-      old_data: oldData || null,
-      new_data: newData || null,
-    });
-  } catch(e) { /* silently fail */ }
-}
-
-// ─── IMPORTAR CSV ────────────────────────────────────────────
-function handleCSVUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  Papa.parse(file, {
-    header: true, skipEmptyLines: true,
-    complete: (results) => previewImport(results.data)
-  });
-}
-
-function previewImport(rows) {
-  const preview = document.getElementById('import-preview');
-  if (!rows.length) { preview.innerHTML = '<p style="color:var(--red)">El archivo está vacío o no tiene el formato correcto.</p>'; return; }
-
-  preview.innerHTML = `
-    <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
-      <p style="font-size:.88rem"><strong>${rows.length}</strong> alumnos encontrados en el archivo</p>
-      <button class="btn btn-primary" onclick="importStudents(window._importRows)">⬆ Importar ${rows.length} alumnos</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>DNI</th><th>Apellido</th><th>Nombre</th><th>Email</th></tr></thead>
-        <tbody>${rows.slice(0,10).map(r => `
-          <tr>
-            <td>${r.dni || r.DNI || r.Dni || '-'}</td>
-            <td>${r.apellido || r.last_name || r.Apellido || '-'}</td>
-            <td>${r.nombre || r.first_name || r.Nombre || '-'}</td>
-            <td>${r.email || r.Email || '-'}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-    ${rows.length > 10 ? `<p style="font-size:.78rem;color:var(--gray-3);margin-top:8px">...y ${rows.length - 10} más</p>` : ''}
-  `;
-  window._importRows = rows;
-}
-
-async function importStudents(rows) {
-  if (!rows?.length) return;
-  let success = 0, errors = 0;
-  for (const row of rows) {
-    const dni = (row.dni || row.DNI || row.Dni || '').toString().trim();
-    const lastName = (row.apellido || row.last_name || row.Apellido || '').trim();
-    const firstName = (row.nombre || row.first_name || row.Nombre || '').trim();
-    const email = (row.email || row.Email || '').trim() || null;
-    if (!dni || !lastName || !firstName) { errors++; continue; }
-    const { error } = await sb.from('students').upsert({ dni, last_name: lastName, first_name: firstName, email, created_by: currentProfile.id }, { onConflict: 'dni' });
-    if (error) errors++; else success++;
-  }
-  toast(`Importación: ${success} exitosos, ${errors} errores`, errors > 0 ? 'info' : 'success');
-  await logAudit('IMPORT', 'students', null, null, { count: success });
-  loadStudents();
-}
-
-function downloadStudentTemplate() {
-  const csv = 'dni,apellido,nombre,email\n12345678,García,Juan,juan@email.com\n87654321,López,María,\n';
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csv);
-  a.download = 'plantilla_alumnos.csv';
-  a.click();
-}
-
-// ─── UTILIDADES ──────────────────────────────────────────────
-function fmt(n) {
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(n || 0);
-}
-
-function fmtDate(d) {
-  if (!d) return '-';
-  return new Date(d + 'T12:00:00').toLocaleDateString('es-AR');
-}
-
-function statusBadge(status) {
-  const map = {
-    pagado: ['badge-green', '✓ Pagado'],
-    parcial: ['badge-orange', '⚡ Parcial'],
-    pendiente: ['badge-red', '⏳ Pendiente'],
-  };
-  const [cls, label] = map[status] || ['badge-gray', status];
-  return `<span class="badge ${cls}">${label}</span>`;
-}
-
-function toast(msg, type = 'info') {
-  const container = document.getElementById('toast-container');
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
-  container.appendChild(t);
-  setTimeout(() => t.remove(), 4000);
-}
-
-// ─── DRAG AND DROP ───────────────────────────────────────────
-const dropZone = document.getElementById('drop-zone');
-if (dropZone) {
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      Papa.parse(file, { header: true, skipEmptyLines: true, complete: r => previewImport(r.data) });
-    }
-  });
-}
-
-// Cerrar modal al click fuera
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.add('hidden');
-  });
-});
-</script>
+        </section>
+
+    </main>
+
+    <script>
+        // === CONFIGURACIÓN SUPABASE ===
+        // IMPORTANTE: Variables inyectadas por Vercel
+        const SUPABASE_URL = 'TU_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // === ESTADO GLOBAL ===
+        let currentUser = null;
+        let userProfile = null;
+        let isLoginMode = true;
+
+        // === UI UTILS ===
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alert-container');
+            const color = type === 'success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300';
+            container.innerHTML = `<div class="p-4 rounded border ${color} shadow-sm">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        // === AUTENTICACIÓN ===
+        document.getElementById('toggle-auth').addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-name').classList.toggle('hidden');
+            document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Ingresar' : 'Registrarse';
+            document.getElementById('toggle-auth').textContent = isLoginMode ? '¿No tienes cuenta? Regístrate como Padre' : '¿Ya tienes cuenta? Inicia sesión';
+        });
+
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            try {
+                if (isLoginMode) {
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                } else {
+                    const name = document.getElementById('auth-name').value;
+                    const { data, error } = await supabase.auth.signUp({
+                        email, password, options: { data: { full_name: name, role: 'parent' } }
+                    });
+                    if (error) throw error;
+                    showAlert('Registro exitoso. Revisa tu correo o inicia sesión.');
+                }
+                checkSession();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        });
+
+        async function logout() {
+            await supabase.auth.signOut();
+            location.reload();
+        }
+
+        // === CONTROL DE SESIÓN Y RUTEO ===
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            document.getElementById('auth-section').style.display = session ? 'none' : 'block';
+            document.getElementById('user-menu').style.display = session ? 'flex' : 'none';
+
+            if (session) {
+                currentUser = session.user;
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+                userProfile = profile;
+                
+                document.getElementById('user-name-display').textContent = profile?.full_name || currentUser.email;
+
+                if (profile?.role === 'admin') {
+                    document.getElementById('admin-dashboard').style.display = 'block';
+                    document.getElementById('parent-dashboard').style.display = 'none';
+                } else {
+                    document.getElementById('admin-dashboard').style.display = 'none';
+                    document.getElementById('parent-dashboard').style.display = 'block';
+                    loadParentData();
+                }
+            }
+        }
+
+        // === LÓGICA DE PADRES ===
+        async function loadParentData() {
+            const container = document.getElementById('parent-students-list');
+            container.innerHTML = '<p class="text-gray-600">Cargando información...</p>';
+
+            // Al estar RLS activo, esta consulta solo devolverá los datos permitidos
+            const { data: students, error } = await supabase
+                .from('students')
+                .select(`
+                    *,
+                    bonds (*, academic_years (*), payments (*))
+                `);
+
+            if (error) {
+                showAlert('Error al cargar datos: ' + error.message, 'error');
+                return;
+            }
+
+            if (!students || students.length === 0) {
+                container.innerHTML = '<p class="text-yellow-600 bg-yellow-50 p-4 rounded border border-yellow-200">No tienes alumnos vinculados aún. Por favor, contacta a la administración.</p>';
+                return;
+            }
+
+            let html = '';
+            students.forEach(student => {
+                html += `<div class="mb-8 border rounded-lg overflow-hidden">
+                    <div class="bg-blue-100 p-4 font-bold text-lg border-b text-blue-900">
+                        Alumno: ${student.first_name} ${student.last_name} (DNI: ${student.dni}) - Grado: ${student.current_grade}
+                    </div>
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-gray-50 text-gray-900 uppercase">
+                            <tr>
+                                <th class="p-3">Nº Bono</th>
+                                <th class="p-3">Año</th>
+                                <th class="p-3">Tipo</th>
+                                <th class="p-3">Estado</th>
+                                <th class="p-3">Pagos / Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                if (student.bonds) {
+                    student.bonds.forEach(bond => {
+                        const totalAmount = bond.academic_years?.total_amount || 0;
+                        const paidAmount = bond.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+                        const balance = totalAmount - paidAmount;
+                        
+                        let statusColor = bond.status === 'pagado' ? 'text-green-600 font-bold' : (bond.status === 'parcial' ? 'text-yellow-600' : 'text-red-600');
+
+                        html += `
+                            <tr class="border-b">
+                                <td class="p-3 font-mono">${bond.bond_number}</td>
+                                <td class="p-3">${bond.academic_years?.year_name || '-'}</td>
+                                <td class="p-3">${bond.is_extra ? '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">Extra (Último Año)</span>' : 'Anual'}</td>
+                                <td class="p-3 ${statusColor} uppercase">${bond.status}</td>
+                                <td class="p-3">
+                                    Pagado: $${paidAmount} <br>
+                                    <span class="text-xs text-gray-500">Saldo: $${balance}</span>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+                html += `</tbody></table></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // === LÓGICA DE ADMIN (Mock de Funciones) ===
+        function showAdminTab(tabName) {
+            const area = document.getElementById('admin-content-area');
+            area.innerHTML = `<h3 class="text-xl font-bold mb-4 text-blue-900">Módulo: ${tabName.toUpperCase()}</h3>
+                              <p class="text-gray-600">Aquí se montarán los formularios de ABM utilizando el SDK de Supabase. (Desarrollo modular).</p>`;
+        }
+
+        async function searchBonds() {
+            const query = document.getElementById('search-input').value;
+            const resultArea = document.getElementById('search-results');
+            
+            if(!query) {
+                showAlert('Por favor ingresa un término de búsqueda', 'error');
+                return;
+            }
+
+            resultArea.innerHTML = 'Buscando...';
+            
+            // Búsqueda por número de bono exacto
+            const { data, error } = await supabase
+                .from('bonds')
+                .select('*, students(*), academic_years(*), payments(*)')
+                .eq('bond_number', query);
+
+            if (error) {
+                resultArea.innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                resultArea.innerHTML = '<p class="text-gray-500">No se encontraron bonos con ese número.</p>';
+                return;
+            }
+
+            const bond = data[0];
+            resultArea.innerHTML = `
+                <div class="bg-blue-50 p-4 border border-blue-200 rounded">
+                    <p><strong>Alumno:</strong> ${bond.students?.first_name} ${bond.students?.last_name}</p>
+                    <p><strong>Bono Nº:</strong> ${bond.bond_number}</p>
+                    <p><strong>Estado:</strong> ${bond.status}</p>
+                </div>
+            `;
+        }
+
+        // Inicialización
+        checkSession();
+    </script>
+</body>
+</html>
