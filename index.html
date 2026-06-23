@@ -60,16 +60,16 @@
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer" onclick="showAdminTab('assign')">
                     <h4 class="font-bold text-lg text-blue-900">Asignar Bonos</h4>
-                    <p class="text-sm text-gray-600">Asignar bonos anuales o extras (6to).</p>
+                    <p class="text-sm text-gray-600">Vincular bonos a alumnos.</p>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer" onclick="showAdminTab('import')">
                     <h4 class="font-bold text-lg text-blue-900">Importación CSV</h4>
-                    <p class="text-sm text-gray-600">Carga masiva de alumnos y bonos.</p>
+                    <p class="text-sm text-gray-600">Carga masiva de alumnos.</p>
                 </div>
             </div>
 
             <div id="admin-content-area" class="bg-white p-6 rounded-lg shadow-md">
-                <p class="text-gray-500 italic">Selecciona una opción del menú superior para comenzar a gestionar.</p>
+                <p class="text-gray-500 italic text-center py-8">Selecciona una opción en los recuadros superiores para comenzar.</p>
             </div>
         </section>
 
@@ -78,8 +78,7 @@
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold mb-4">Estado de Cuenta de Alumnos Vinculados</h3>
                 <button onclick="loadParentData()" class="mb-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Actualizar Información</button>
-                <div id="parent-students-list" class="overflow-x-auto">
-                    </div>
+                <div id="parent-students-list" class="overflow-x-auto"></div>
             </div>
         </section>
 
@@ -87,24 +86,23 @@
 
     <script>
         // === CONFIGURACIÓN SUPABASE ===
-        // IMPORTANTE: Coloca tu URL y tu ANON KEY reales aquí
+        // IMPORTANTE: Coloca tus claves reales aquí
         const SUPABASE_URL = 'https://nujjafazakbcokxmcadm.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg';
         
-        // El cliente ha sido renombrado a supabaseClient para evitar el SyntaxError
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // === ESTADO GLOBAL ===
         let currentUser = null;
         let userProfile = null;
         let isLoginMode = true;
 
-        // === UI UTILS ===
+        // === UTILIDADES ===
         function showAlert(message, type = 'success') {
             const container = document.getElementById('alert-container');
             const color = type === 'success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300';
-            container.innerHTML = `<div class="p-4 rounded border ${color} shadow-sm">${message}</div>`;
-            setTimeout(() => container.innerHTML = '', 5000);
+            container.innerHTML = `<div class="p-4 rounded border ${color} shadow-sm mb-4">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 6000);
+            window.scrollTo(0,0);
         }
 
         // === AUTENTICACIÓN ===
@@ -122,15 +120,15 @@
             
             try {
                 if (isLoginMode) {
-                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
                     if (error) throw error;
                 } else {
                     const name = document.getElementById('auth-name').value;
-                    const { data, error } = await supabaseClient.auth.signUp({
+                    const { error } = await supabaseClient.auth.signUp({
                         email, password, options: { data: { full_name: name, role: 'parent' } }
                     });
                     if (error) throw error;
-                    showAlert('Registro exitoso. Revisa tu correo o inicia sesión.');
+                    showAlert('Registro exitoso. Inicia sesión.');
                 }
                 checkSession();
             } catch (error) {
@@ -143,7 +141,6 @@
             location.reload();
         }
 
-        // === CONTROL DE SESIÓN Y RUTEO ===
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             
@@ -173,61 +170,27 @@
             const container = document.getElementById('parent-students-list');
             container.innerHTML = '<p class="text-gray-600">Cargando información...</p>';
 
-            const { data: students, error } = await supabaseClient
-                .from('students')
-                .select(`
-                    *,
-                    bonds (*, academic_years (*), payments (*))
-                `);
-
-            if (error) {
-                showAlert('Error al cargar datos: ' + error.message, 'error');
-                return;
-            }
-
-            if (!students || students.length === 0) {
-                container.innerHTML = '<p class="text-yellow-600 bg-yellow-50 p-4 rounded border border-yellow-200">No tienes alumnos vinculados aún. Por favor, contacta a la administración.</p>';
-                return;
-            }
+            const { data: students, error } = await supabaseClient.from('students').select(`*, bonds (*, academic_years (*), payments (*))`);
+            if (error) return showAlert('Error: ' + error.message, 'error');
+            if (!students || students.length === 0) return container.innerHTML = '<p class="text-yellow-600">No tienes alumnos vinculados.</p>';
 
             let html = '';
             students.forEach(student => {
                 html += `<div class="mb-8 border rounded-lg overflow-hidden">
-                    <div class="bg-blue-100 p-4 font-bold text-lg border-b text-blue-900">
-                        Alumno: ${student.first_name} ${student.last_name} (DNI: ${student.dni}) - Grado: ${student.current_grade}
-                    </div>
-                    <table class="w-full text-left text-sm text-gray-600">
-                        <thead class="bg-gray-50 text-gray-900 uppercase">
-                            <tr>
-                                <th class="p-3">Nº Bono</th>
-                                <th class="p-3">Año</th>
-                                <th class="p-3">Tipo</th>
-                                <th class="p-3">Estado</th>
-                                <th class="p-3">Pagos / Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
+                    <div class="bg-blue-100 p-4 font-bold text-lg border-b text-blue-900">Alumno: ${student.first_name} ${student.last_name} (DNI: ${student.dni})</div>
+                    <table class="w-full text-left text-sm text-gray-600"><thead class="bg-gray-50 text-gray-900 uppercase">
+                    <tr><th class="p-3">Nº Bono</th><th class="p-3">Año / Curso</th><th class="p-3">Tipo</th><th class="p-3">Estado</th><th class="p-3">Saldo</th></tr></thead><tbody>`;
                 
                 if (student.bonds) {
                     student.bonds.forEach(bond => {
                         const totalAmount = bond.academic_years?.total_amount || 0;
                         const paidAmount = bond.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
                         const balance = totalAmount - paidAmount;
-                        
-                        let statusColor = bond.status === 'pagado' ? 'text-green-600 font-bold' : (bond.status === 'parcial' ? 'text-yellow-600' : 'text-red-600');
+                        const statusColor = bond.status === 'pagado' ? 'text-green-600 font-bold' : (bond.status === 'parcial' ? 'text-yellow-600' : 'text-red-600');
 
-                        html += `
-                            <tr class="border-b">
-                                <td class="p-3 font-mono">${bond.bond_number}</td>
-                                <td class="p-3">${bond.academic_years?.year_name || '-'}</td>
-                                <td class="p-3">${bond.is_extra ? '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">Extra (Último Año)</span>' : 'Anual'}</td>
-                                <td class="p-3 ${statusColor} uppercase">${bond.status}</td>
-                                <td class="p-3">
-                                    Pagado: $${paidAmount} <br>
-                                    <span class="text-xs text-gray-500">Saldo: $${balance}</span>
-                                </td>
-                            </tr>
-                        `;
+                        html += `<tr class="border-b"><td class="p-3 font-mono">${bond.bond_number}</td><td class="p-3">${bond.academic_years?.year_name} / ${bond.course}</td>
+                                 <td class="p-3">${bond.is_extra ? 'Extra' : 'Anual'}</td><td class="p-3 ${statusColor} uppercase">${bond.status}</td>
+                                 <td class="p-3">Debe: $${balance}</td></tr>`;
                     });
                 }
                 html += `</tbody></table></div>`;
@@ -235,70 +198,143 @@
             container.innerHTML = html;
         }
 
-        // === LÓGICA DE ADMIN ===
-        function showAdminTab(tabName) {
+        // === MÓDULOS DE ADMINISTRADOR ===
+        async function showAdminTab(tabName) {
             const area = document.getElementById('admin-content-area');
-            area.innerHTML = `<h3 class="text-xl font-bold mb-4 text-blue-900">Módulo: ${tabName.toUpperCase()}</h3>
-                              <p class="text-gray-600">Aquí se montarán los formularios de ABM utilizando el SDK de Supabase. (Desarrollo modular).</p>`;
+            area.innerHTML = '<p class="text-gray-500">Cargando módulo...</p>';
+
+            if (tabName === 'config') {
+                area.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4 text-blue-900 border-b pb-2">Configuración de Año Lectivo</h3>
+                    <form id="form-config" class="space-y-4 max-w-md bg-gray-50 p-6 rounded border">
+                        <div><label class="block text-sm font-bold text-gray-700">Año (Ej: 2026)</label><input type="number" id="cfg-year" required class="w-full p-2 border rounded"></div>
+                        <div><label class="block text-sm font-bold text-gray-700">Monto Total del Bono ($)</label><input type="number" id="cfg-amount" required class="w-full p-2 border rounded"></div>
+                        <div><label class="block text-sm font-bold text-gray-700">Cantidad de Cuotas</label><input type="number" id="cfg-installments" required class="w-full p-2 border rounded"></div>
+                        <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">Guardar Año</button>
+                    </form>
+                `;
+                document.getElementById('form-config').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const year = document.getElementById('cfg-year').value;
+                    const amount = document.getElementById('cfg-amount').value;
+                    const installments = document.getElementById('cfg-installments').value;
+                    
+                    const { error } = await supabaseClient.from('academic_years').insert([{
+                        year_name: year, total_amount: amount, installments_count: installments
+                    }]);
+                    
+                    if (error) showAlert('Error al guardar: ' + error.message, 'error');
+                    else { showAlert('Año configurado exitosamente.'); e.target.reset(); }
+                };
+
+            } else if (tabName === 'assign') {
+                // Cargar datos para los selectores
+                const { data: students } = await supabaseClient.from('students').select('id, first_name, last_name, dni');
+                const { data: years } = await supabaseClient.from('academic_years').select('id, year_name');
+
+                let studentOptions = students?.map(s => `<option value="${s.id}">${s.first_name} ${s.last_name} (DNI: ${s.dni})</option>`).join('') || '';
+                let yearOptions = years?.map(y => `<option value="${y.id}">${y.year_name}</option>`).join('') || '';
+
+                area.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4 text-blue-900 border-b pb-2">Asignar Bono a Alumno</h3>
+                    <form id="form-assign" class="space-y-4 max-w-lg bg-gray-50 p-6 rounded border">
+                        <div><label class="block text-sm font-bold text-gray-700">Alumno</label>
+                             <select id="ass-student" required class="w-full p-2 border rounded"><option value="">Seleccione alumno...</option>${studentOptions}</select></div>
+                        <div><label class="block text-sm font-bold text-gray-700">Año Lectivo</label>
+                             <select id="ass-year" required class="w-full p-2 border rounded"><option value="">Seleccione año...</option>${yearOptions}</select></div>
+                        <div><label class="block text-sm font-bold text-gray-700">Curso Actual (Ej: 1 H, 6 A)</label><input type="text" id="ass-course" required class="w-full p-2 border rounded uppercase"></div>
+                        <div><label class="block text-sm font-bold text-gray-700">Número de Bono Impreso</label><input type="text" id="ass-bond" required class="w-full p-2 border rounded" placeholder="Ej: 0125" maxlength="4"></div>
+                        <div class="flex items-center gap-2 mt-4 bg-purple-50 p-3 rounded border border-purple-200">
+                            <input type="checkbox" id="ass-extra" class="w-5 h-5 text-purple-600">
+                            <label class="text-sm font-bold text-purple-900">Marcar si es un Bono Extra (Solo para 6to Año)</label>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 mt-4 rounded font-bold hover:bg-blue-700">Asignar Bono</button>
+                    </form>
+                `;
+                document.getElementById('form-assign').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const student_id = document.getElementById('ass-student').value;
+                    const academic_year_id = document.getElementById('ass-year').value;
+                    const course = document.getElementById('ass-course').value.toUpperCase();
+                    // Rellenar con ceros a la izquierda (ej: 12 -> 0012)
+                    const bond_number = document.getElementById('ass-bond').value.padStart(4, '0');
+                    const is_extra = document.getElementById('ass-extra').checked;
+
+                    const { error } = await supabaseClient.from('bonds').insert([{
+                        student_id, academic_year_id, course, bond_number, is_extra
+                    }]);
+
+                    if (error) showAlert('Error: ' + error.message, 'error');
+                    else { showAlert('Bono asignado exitosamente.'); e.target.reset(); }
+                };
+
+            } else if (tabName === 'import') {
+                area.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4 text-blue-900 border-b pb-2">Importación Masiva de Alumnos (CSV)</h3>
+                    <div class="bg-gray-50 p-6 rounded border">
+                        <p class="text-sm mb-4 text-gray-700">El archivo CSV debe contener exactamente estas columnas en la primera fila (encabezado): <br> <code class="bg-gray-200 p-1 rounded font-bold">dni, first_name, last_name, current_grade</code></p>
+                        <input type="file" id="csv-file" accept=".csv" class="mb-6 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <button onclick="processCSV()" class="bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700">Subir e Importar</button>
+                    </div>
+                `;
+            }
         }
 
+        // Lógica para procesar el CSV (PapaParse)
+        window.processCSV = function() {
+            const fileInput = document.getElementById('csv-file');
+            if (!fileInput.files.length) return showAlert('Por favor, selecciona un archivo CSV primero.', 'error');
+            
+            Papa.parse(fileInput.files[0], {
+                header: true,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const data = results.data;
+                    if(data.length === 0) return showAlert('El archivo está vacío o mal formateado.', 'error');
+                    
+                    // Insertar en Supabase
+                    const { error } = await supabaseClient.from('students').insert(data);
+                    if (error) showAlert('Error en importación: ' + error.message, 'error');
+                    else {
+                        showAlert(`¡Éxito! Se importaron ${data.length} alumnos correctamente.`);
+                        fileInput.value = ''; // Limpiar input
+                    }
+                }
+            });
+        };
+
+        // Buscador
         async function searchBonds() {
             const query = document.getElementById('search-input').value.trim();
             const resultArea = document.getElementById('search-results');
-            
-            if(!query) {
-                showAlert('Por favor ingresa un término de búsqueda', 'error');
-                return;
-            }
+            if(!query) return showAlert('Ingresa un número de bono', 'error');
 
             resultArea.innerHTML = '<p class="text-gray-600">Buscando...</p>';
-            
-            const { data, error } = await supabaseClient
-                .from('bonds')
-                .select('*, students(*), academic_years(*), payments(*)')
-                .eq('bond_number', query)
-                .order('academic_year_id', { ascending: false });
+            const { data, error } = await supabaseClient.from('bonds').select('*, students(*), academic_years(*), payments(*)').eq('bond_number', query).order('academic_year_id', { ascending: false });
 
-            if (error) {
-                resultArea.innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
-                return;
-            }
+            if (error) return resultArea.innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
+            if (!data || data.length === 0) return resultArea.innerHTML = '<p class="text-gray-500">No se encontraron bonos.</p>';
 
-            if (!data || data.length === 0) {
-                resultArea.innerHTML = '<p class="text-gray-500">No se encontraron bonos con ese número.</p>';
-                return;
-            }
-
-            let html = `<p class="font-bold mb-4 text-blue-900">Resultados históricos para el Bono Nº ${query}:</p>`;
-            html += `<div class="grid gap-4">`;
-
+            let html = `<div class="grid gap-4 mt-4">`;
             data.forEach(bond => {
-                const yearName = bond.academic_years?.year_name || 'Desconocido';
                 const totalAmount = bond.academic_years?.total_amount || 0;
                 const paidAmount = bond.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
-                const balance = totalAmount - paidAmount;
-                const statusColor = bond.status === 'pagado' ? 'text-green-600 font-bold' : (bond.status === 'parcial' ? 'text-yellow-600' : 'text-red-600');
-
                 html += `
-                    <div class="bg-blue-50 p-4 border border-blue-200 rounded shadow-sm">
-                        <div class="flex justify-between border-b border-blue-200 pb-2 mb-2">
-                            <span class="font-bold text-lg text-blue-900">Año Lectivo: ${yearName}</span>
-                            <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs font-bold">${bond.course}</span>
+                    <div class="bg-blue-50 p-4 border border-blue-200 rounded">
+                        <div class="flex justify-between border-b pb-2 mb-2">
+                            <span class="font-bold text-blue-900">Año: ${bond.academic_years?.year_name}</span>
+                            <span class="bg-blue-200 px-2 py-1 rounded text-xs font-bold">Curso: ${bond.course}</span>
                         </div>
                         <p><strong>Alumno:</strong> ${bond.students?.first_name} ${bond.students?.last_name} (DNI: ${bond.students?.dni})</p>
-                        <p><strong>Tipo:</strong> ${bond.is_extra ? 'Bono Extra (6TO)' : 'Bono Anual'}</p>
-                        <p><strong>Estado:</strong> <span class="uppercase ${statusColor}">${bond.status}</span></p>
-                        <p><strong>Monto Total:</strong> $${totalAmount} | <strong>Pagado:</strong> $${paidAmount} | <strong>Saldo:</strong> $${balance}</p>
-                    </div>
-                `;
+                        <p><strong>Estado:</strong> <span class="uppercase font-bold">${bond.status}</span></p>
+                        <p><strong>Deuda Restante:</strong> $${totalAmount - paidAmount}</p>
+                    </div>`;
             });
-
-            html += `</div>`;
-            resultArea.innerHTML = html;
+            resultArea.innerHTML = html + `</div>`;
         }
 
-        // Inicialización
         checkSession();
     </script>
 </body>
+</html>
 </html>
