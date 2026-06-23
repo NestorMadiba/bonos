@@ -86,200 +86,220 @@
     </main>
 
     <script>
-        // === CONFIGURACIÓN SUPABASE ===
-        // IMPORTANTE: Variables inyectadas por Vercel
-        const SUPABASE_URL = 'https://nujjafazakbcokxmcadm.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// === CONFIGURACIÓN SUPABASE ===
+    // IMPORTANTE: Asegúrate de poner tus claves reales aquí
+    const SUPABASE_URL = 'TU_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+    
+    // CORRECCIÓN: Cambiamos el nombre de la variable a "supabaseClient"
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // === ESTADO GLOBAL ===
-        let currentUser = null;
-        let userProfile = null;
-        let isLoginMode = true;
+    // === ESTADO GLOBAL ===
+    let currentUser = null;
+    let userProfile = null;
+    let isLoginMode = true;
 
-        // === UI UTILS ===
-        function showAlert(message, type = 'success') {
-            const container = document.getElementById('alert-container');
-            const color = type === 'success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300';
-            container.innerHTML = `<div class="p-4 rounded border ${color} shadow-sm">${message}</div>`;
-            setTimeout(() => container.innerHTML = '', 5000);
+    // === UI UTILS ===
+    function showAlert(message, type = 'success') {
+        const container = document.getElementById('alert-container');
+        const color = type === 'success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300';
+        container.innerHTML = `<div class="p-4 rounded border ${color} shadow-sm">${message}</div>`;
+        setTimeout(() => container.innerHTML = '', 5000);
+    }
+
+    // === AUTENTICACIÓN ===
+    document.getElementById('toggle-auth').addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        document.getElementById('auth-name').classList.toggle('hidden');
+        document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Ingresar' : 'Registrarse';
+        document.getElementById('toggle-auth').textContent = isLoginMode ? '¿No tienes cuenta? Regístrate como Padre' : '¿Ya tienes cuenta? Inicia sesión';
+    });
+
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+        
+        try {
+            if (isLoginMode) {
+                // CORRECCIÓN APLICADA: supabaseClient en lugar de supabase
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+            } else {
+                const name = document.getElementById('auth-name').value;
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email, password, options: { data: { full_name: name, role: 'parent' } }
+                });
+                if (error) throw error;
+                showAlert('Registro exitoso. Revisa tu correo o inicia sesión.');
+            }
+            checkSession();
+        } catch (error) {
+            showAlert(error.message, 'error');
         }
+    });
 
-        // === AUTENTICACIÓN ===
-        document.getElementById('toggle-auth').addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            document.getElementById('auth-name').classList.toggle('hidden');
-            document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Ingresar' : 'Registrarse';
-            document.getElementById('toggle-auth').textContent = isLoginMode ? '¿No tienes cuenta? Regístrate como Padre' : '¿Ya tienes cuenta? Inicia sesión';
-        });
+    async function logout() {
+        await supabaseClient.auth.signOut();
+        location.reload();
+    }
 
-        document.getElementById('auth-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
+    // === CONTROL DE SESIÓN Y RUTEO ===
+    async function checkSession() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        document.getElementById('auth-section').style.display = session ? 'none' : 'block';
+        document.getElementById('user-menu').style.display = session ? 'flex' : 'none';
+
+        if (session) {
+            currentUser = session.user;
+            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            userProfile = profile;
             
-            try {
-                if (isLoginMode) {
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                } else {
-                    const name = document.getElementById('auth-name').value;
-                    const { data, error } = await supabase.auth.signUp({
-                        email, password, options: { data: { full_name: name, role: 'parent' } }
-                    });
-                    if (error) throw error;
-                    showAlert('Registro exitoso. Revisa tu correo o inicia sesión.');
-                }
-                checkSession();
-            } catch (error) {
-                showAlert(error.message, 'error');
-            }
-        });
+            document.getElementById('user-name-display').textContent = profile?.full_name || currentUser.email;
 
-        async function logout() {
-            await supabase.auth.signOut();
-            location.reload();
+            if (profile?.role === 'admin') {
+                document.getElementById('admin-dashboard').style.display = 'block';
+                document.getElementById('parent-dashboard').style.display = 'none';
+            } else {
+                document.getElementById('admin-dashboard').style.display = 'none';
+                document.getElementById('parent-dashboard').style.display = 'block';
+                loadParentData();
+            }
+        }
+    }
+
+    // === LÓGICA DE PADRES ===
+    async function loadParentData() {
+        const container = document.getElementById('parent-students-list');
+        container.innerHTML = '<p class="text-gray-600">Cargando información...</p>';
+
+        const { data: students, error } = await supabaseClient
+            .from('students')
+            .select(`
+                *,
+                bonds (*, academic_years (*), payments (*))
+            `);
+
+        if (error) {
+            showAlert('Error al cargar datos: ' + error.message, 'error');
+            return;
         }
 
-        // === CONTROL DE SESIÓN Y RUTEO ===
-        async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
+        if (!students || students.length === 0) {
+            container.innerHTML = '<p class="text-yellow-600 bg-yellow-50 p-4 rounded border border-yellow-200">No tienes alumnos vinculados aún. Por favor, contacta a la administración.</p>';
+            return;
+        }
+
+        let html = '';
+        students.forEach(student => {
+            html += `<div class="mb-8 border rounded-lg overflow-hidden">
+                <div class="bg-blue-100 p-4 font-bold text-lg border-b text-blue-900">
+                    Alumno: ${student.first_name} ${student.last_name} (DNI: ${student.dni}) - Grado: ${student.current_grade}
+                </div>
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-gray-50 text-gray-900 uppercase">
+                        <tr>
+                            <th class="p-3">Nº Bono</th>
+                            <th class="p-3">Año</th>
+                            <th class="p-3">Tipo</th>
+                            <th class="p-3">Estado</th>
+                            <th class="p-3">Pagos / Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
             
-            document.getElementById('auth-section').style.display = session ? 'none' : 'block';
-            document.getElementById('user-menu').style.display = session ? 'flex' : 'none';
+            if (student.bonds) {
+                student.bonds.forEach(bond => {
+                    const totalAmount = bond.academic_years?.total_amount || 0;
+                    const paidAmount = bond.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+                    const balance = totalAmount - paidAmount;
+                    
+                    let statusColor = bond.status === 'pagado' ? 'text-green-600 font-bold' : (bond.status === 'parcial' ? 'text-yellow-600' : 'text-red-600');
 
-            if (session) {
-                currentUser = session.user;
-                const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-                userProfile = profile;
-                
-                document.getElementById('user-name-display').textContent = profile?.full_name || currentUser.email;
-
-                if (profile?.role === 'admin') {
-                    document.getElementById('admin-dashboard').style.display = 'block';
-                    document.getElementById('parent-dashboard').style.display = 'none';
-                } else {
-                    document.getElementById('admin-dashboard').style.display = 'none';
-                    document.getElementById('parent-dashboard').style.display = 'block';
-                    loadParentData();
-                }
+                    html += `
+                        <tr class="border-b">
+                            <td class="p-3 font-mono">${bond.bond_number}</td>
+                            <td class="p-3">${bond.academic_years?.year_name || '-'}</td>
+                            <td class="p-3">${bond.is_extra ? '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">Extra (Último Año)</span>' : 'Anual'}</td>
+                            <td class="p-3 ${statusColor} uppercase">${bond.status}</td>
+                            <td class="p-3">
+                                Pagado: $${paidAmount} <br>
+                                <span class="text-xs text-gray-500">Saldo: $${balance}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
             }
+            html += `</tbody></table></div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    // === LÓGICA DE ADMIN ===
+    function showAdminTab(tabName) {
+        const area = document.getElementById('admin-content-area');
+        area.innerHTML = `<h3 class="text-xl font-bold mb-4 text-blue-900">Módulo: ${tabName.toUpperCase()}</h3>
+                          <p class="text-gray-600">Aquí se montarán los formularios de ABM utilizando el SDK de Supabase. (Desarrollo modular).</p>`;
+    }
+
+    async function searchBonds() {
+        const query = document.getElementById('search-input').value.trim();
+        const resultArea = document.getElementById('search-results');
+        
+        if(!query) {
+            showAlert('Por favor ingresa un término de búsqueda', 'error');
+            return;
         }
 
-        // === LÓGICA DE PADRES ===
-        async function loadParentData() {
-            const container = document.getElementById('parent-students-list');
-            container.innerHTML = '<p class="text-gray-600">Cargando información...</p>';
+        resultArea.innerHTML = '<p class="text-gray-600">Buscando...</p>';
+        
+        const { data, error } = await supabaseClient
+            .from('bonds')
+            .select('*, students(*), academic_years(*), payments(*)')
+            .eq('bond_number', query)
+            .order('academic_year_id', { ascending: false });
 
-            // Al estar RLS activo, esta consulta solo devolverá los datos permitidos
-            const { data: students, error } = await supabase
-                .from('students')
-                .select(`
-                    *,
-                    bonds (*, academic_years (*), payments (*))
-                `);
+        if (error) {
+            resultArea.innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
+            return;
+        }
 
-            if (error) {
-                showAlert('Error al cargar datos: ' + error.message, 'error');
-                return;
-            }
+        if (!data || data.length === 0) {
+            resultArea.innerHTML = '<p class="text-gray-500">No se encontraron bonos con ese número.</p>';
+            return;
+        }
 
-            if (!students || students.length === 0) {
-                container.innerHTML = '<p class="text-yellow-600 bg-yellow-50 p-4 rounded border border-yellow-200">No tienes alumnos vinculados aún. Por favor, contacta a la administración.</p>';
-                return;
-            }
+        let html = `<p class="font-bold mb-4 text-blue-900">Resultados históricos para el Bono Nº ${query}:</p>`;
+        html += `<div class="grid gap-4">`;
 
-            let html = '';
-            students.forEach(student => {
-                html += `<div class="mb-8 border rounded-lg overflow-hidden">
-                    <div class="bg-blue-100 p-4 font-bold text-lg border-b text-blue-900">
-                        Alumno: ${student.first_name} ${student.last_name} (DNI: ${student.dni}) - Grado: ${student.current_grade}
+        data.forEach(bond => {
+            const yearName = bond.academic_years?.year_name || 'Desconocido';
+            const totalAmount = bond.academic_years?.total_amount || 0;
+            const paidAmount = bond.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+            const balance = totalAmount - paidAmount;
+            const statusColor = bond.status === 'pagado' ? 'text-green-600 font-bold' : (bond.status === 'parcial' ? 'text-yellow-600' : 'text-red-600');
+
+            html += `
+                <div class="bg-blue-50 p-4 border border-blue-200 rounded shadow-sm">
+                    <div class="flex justify-between border-b border-blue-200 pb-2 mb-2">
+                        <span class="font-bold text-lg text-blue-900">Año Lectivo: ${yearName}</span>
+                        <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs font-bold">${bond.course}</span>
                     </div>
-                    <table class="w-full text-left text-sm text-gray-600">
-                        <thead class="bg-gray-50 text-gray-900 uppercase">
-                            <tr>
-                                <th class="p-3">Nº Bono</th>
-                                <th class="p-3">Año</th>
-                                <th class="p-3">Tipo</th>
-                                <th class="p-3">Estado</th>
-                                <th class="p-3">Pagos / Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                
-                if (student.bonds) {
-                    student.bonds.forEach(bond => {
-                        const totalAmount = bond.academic_years?.total_amount || 0;
-                        const paidAmount = bond.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
-                        const balance = totalAmount - paidAmount;
-                        
-                        let statusColor = bond.status === 'pagado' ? 'text-green-600 font-bold' : (bond.status === 'parcial' ? 'text-yellow-600' : 'text-red-600');
-
-                        html += `
-                            <tr class="border-b">
-                                <td class="p-3 font-mono">${bond.bond_number}</td>
-                                <td class="p-3">${bond.academic_years?.year_name || '-'}</td>
-                                <td class="p-3">${bond.is_extra ? '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">Extra (Último Año)</span>' : 'Anual'}</td>
-                                <td class="p-3 ${statusColor} uppercase">${bond.status}</td>
-                                <td class="p-3">
-                                    Pagado: $${paidAmount} <br>
-                                    <span class="text-xs text-gray-500">Saldo: $${balance}</span>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                }
-                html += `</tbody></table></div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        // === LÓGICA DE ADMIN (Mock de Funciones) ===
-        function showAdminTab(tabName) {
-            const area = document.getElementById('admin-content-area');
-            area.innerHTML = `<h3 class="text-xl font-bold mb-4 text-blue-900">Módulo: ${tabName.toUpperCase()}</h3>
-                              <p class="text-gray-600">Aquí se montarán los formularios de ABM utilizando el SDK de Supabase. (Desarrollo modular).</p>`;
-        }
-
-        async function searchBonds() {
-            const query = document.getElementById('search-input').value;
-            const resultArea = document.getElementById('search-results');
-            
-            if(!query) {
-                showAlert('Por favor ingresa un término de búsqueda', 'error');
-                return;
-            }
-
-            resultArea.innerHTML = 'Buscando...';
-            
-            // Búsqueda por número de bono exacto
-            const { data, error } = await supabase
-                .from('bonds')
-                .select('*, students(*), academic_years(*), payments(*)')
-                .eq('bond_number', query);
-
-            if (error) {
-                resultArea.innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                resultArea.innerHTML = '<p class="text-gray-500">No se encontraron bonos con ese número.</p>';
-                return;
-            }
-
-            const bond = data[0];
-            resultArea.innerHTML = `
-                <div class="bg-blue-50 p-4 border border-blue-200 rounded">
-                    <p><strong>Alumno:</strong> ${bond.students?.first_name} ${bond.students?.last_name}</p>
-                    <p><strong>Bono Nº:</strong> ${bond.bond_number}</p>
-                    <p><strong>Estado:</strong> ${bond.status}</p>
+                    <p><strong>Alumno:</strong> ${bond.students?.first_name} ${bond.students?.last_name} (DNI: ${bond.students?.dni})</p>
+                    <p><strong>Tipo:</strong> ${bond.is_extra ? 'Bono Extra (6TO)' : 'Bono Anual'}</p>
+                    <p><strong>Estado:</strong> <span class="uppercase ${statusColor}">${bond.status}</span></p>
+                    <p><strong>Monto Total:</strong> $${totalAmount} | <strong>Pagado:</strong> $${paidAmount} | <strong>Saldo:</strong> $${balance}</p>
                 </div>
             `;
-        }
+        });
 
-        // Inicialización
-        checkSession();
+        html += `</div>`;
+        resultArea.innerHTML = html;
+    }
+
+    // Inicialización
+    checkSession();
     </script>
 </body>
 </html>
