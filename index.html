@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bono Contribución Viaje de Peregrinación</title>
+    
     <!-- Tailwind CSS para estilos modernos y rápidos -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <!-- Supabase JS Client -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -33,35 +37,50 @@
         .view-section.active { display: block; opacity: 1; }
         .sidebar-item:hover { background-color: rgba(255,255,255,0.1); }
         .sidebar-item.active { background-color: rgba(255,255,255,0.2); border-left: 4px solid #facc15; }
+        
+        /* Evitar barra de scroll horizontal a menos que sea necesario */
+        body { overflow-x: hidden; }
+        
+        /* Ajustes para scrollbars personalizados */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans h-screen overflow-hidden flex">
+<body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col md:flex-row overflow-hidden">
 
     <!-- ==================== PANTALLA DE LOGIN ==================== -->
-    <div id="login-view" class="active view-section fixed inset-0 z-50 flex bg-white">
-        <!-- Lado izquierdo: Imagen y Branding -->
+    <div id="login-view" class="active view-section fixed inset-0 z-50 flex bg-white overflow-hidden">
+        
+        <!-- Lado izquierdo: Imagen y Branding (Oculto en móviles, visible en pantallas grandes) -->
         <div class="hidden lg:flex lg:w-1/2 bg-gray-100 flex-col justify-center items-center relative overflow-hidden">
-            <div class="absolute inset-0 bg-primary opacity-90 mix-blend-multiply"></div>
-            <img src="bonobachi.png" alt="Bono Contribucion Viaje de Peregrinacion" class="absolute inset-0 w-full h-full object-cover opacity-60">
-            <div class="relative z-10 text-center px-12">
-                <h1 class="text-5xl font-bold text-white mb-6 tracking-tight shadow-sm" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+            <div class="absolute inset-0 bg-primary opacity-80 mix-blend-multiply z-10"></div>
+            <!-- IMAGEN SOLICITADA -->
+            <img src="bonobachi.png" alt="Bono Contribución Viaje de Peregrinación" class="absolute inset-0 w-full h-full object-cover z-0" onerror="this.src='https://placehold.co/1920x1080/1e3a8a/ffffff?text=Bono+Contribución'">
+            <div class="relative z-20 text-center px-12">
+                <h1 class="text-5xl font-bold text-white mb-6 tracking-tight shadow-sm" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.8);">
                     Bono Contribución<br>Viaje de Peregrinación
                 </h1>
-                <p class="text-xl text-gray-200">Sistema Integral de Gestión y Trazabilidad</p>
+                <p class="text-xl text-gray-200 drop-shadow-md">Sistema Integral de Gestión y Trazabilidad</p>
             </div>
         </div>
         
-        <!-- Lado derecho: Formulario -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white shadow-[0_0_40px_rgba(0,0,0,0.1)] z-10">
-            <div class="w-full max-w-md">
+        <!-- Lado derecho: Formulario (Con scroll vertical si la pantalla es muy baja) -->
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-8 bg-white shadow-[0_0_40px_rgba(0,0,0,0.1)] z-30 overflow-y-auto">
+            <div class="w-full max-w-md py-8">
                 <div class="text-center mb-10">
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-primary mb-4">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-primary mb-4 shadow-sm">
                         <i class="fa-solid fa-ticket text-3xl"></i>
                     </div>
+                    <!-- Título visible solo en móviles -->
+                    <h1 class="text-2xl font-bold text-primary lg:hidden mb-4">Bono Contribución<br>Viaje de Peregrinación</h1>
+                    
                     <h2 class="text-3xl font-bold text-gray-900">Iniciar Sesión</h2>
                     <p class="text-sm text-gray-500 mt-2">Ingresa tus credenciales para continuar</p>
                 </div>
-                <form id="login-form" class="space-y-6">
+                
+                <form id="login-form" class="space-y-6" onsubmit="event.preventDefault(); loginDemo();">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
                         <input type="email" id="email" class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition-colors" placeholder="admin@colegio.edu" required>
@@ -75,11 +94,14 @@
                             <input id="remember-me" type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                             <label for="remember-me" class="ml-2 block text-sm text-gray-900"> Recordarme </label>
                         </div>
+                        <div class="text-sm">
+                            <a href="#" class="font-medium text-primary hover:text-blue-800">¿Olvidaste tu contraseña?</a>
+                        </div>
                     </div>
-                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-primary hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
                         Ingresar al Sistema
                     </button>
-                    <!-- Botón demo para frontend -->
+                    <!-- Botón demo para frontend (bypass) -->
                     <button type="button" onclick="loginDemo()" class="w-full mt-2 flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         Ingreso Demo (Vista Admin)
                     </button>
@@ -89,16 +111,26 @@
     </div>
 
     <!-- ==================== APP PRINCIPAL (ADMIN) ==================== -->
-    <div id="app-view" class="view-section w-full flex h-full">
+    <div id="app-view" class="view-section w-full h-full flex relative bg-gray-50">
         
-        <!-- Sidebar -->
-        <aside class="w-64 bg-dark text-white flex flex-col shadow-xl z-20">
-            <div class="p-6 flex items-center space-x-3 border-b border-gray-700">
-                <i class="fa-solid fa-cross text-secondary text-2xl"></i>
-                <span class="text-lg font-bold uppercase tracking-wider leading-tight">Peregrinación<br><span class="text-xs text-gray-400 font-normal">Gestión de Bonos</span></span>
+        <!-- Overlay para móvil (fondo oscuro al abrir el menú) -->
+        <div id="mobile-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden lg:hidden transition-opacity" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar / Menú Lateral -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full lg:relative lg:translate-x-0 z-30 w-72 bg-dark text-white flex flex-col shadow-xl transition-transform duration-300 ease-in-out">
+            <div class="p-6 flex items-center justify-between border-b border-gray-700 bg-gray-900">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-cross text-secondary text-2xl"></i>
+                    <span class="text-lg font-bold uppercase tracking-wider leading-tight">Peregrinación<br><span class="text-xs text-gray-400 font-normal">Gestión de Bonos</span></span>
+                </div>
+                <!-- Botón cerrar solo visible en móvil -->
+                <button class="lg:hidden text-gray-400 hover:text-white transition" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
             </div>
             
-            <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <nav class="flex-1 py-6 space-y-2 overflow-y-auto">
+                <p class="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Menú Principal</p>
                 <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-item active flex items-center px-6 py-3 text-sm font-medium transition-colors">
                     <i class="fa-solid fa-chart-pie w-6"></i> Panel General
                 </a>
@@ -108,79 +140,104 @@
                 <a href="#" onclick="switchTab('pagos')" id="nav-pagos" class="sidebar-item flex items-center px-6 py-3 text-sm font-medium transition-colors">
                     <i class="fa-solid fa-money-bill-wave w-6"></i> Gestión de Pagos
                 </a>
-                <a href="#" class="sidebar-item flex items-center px-6 py-3 text-sm font-medium transition-colors text-gray-400">
-                    <i class="fa-solid fa-file-invoice w-6"></i> Informes (Próximamente)
+                
+                <p class="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">Configuración</p>
+                <a href="#" class="sidebar-item flex items-center px-6 py-3 text-sm font-medium transition-colors text-gray-400 cursor-not-allowed">
+                    <i class="fa-solid fa-file-invoice w-6"></i> Reportes <span class="ml-auto text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">Próx</span>
+                </a>
+                <a href="#" class="sidebar-item flex items-center px-6 py-3 text-sm font-medium transition-colors text-gray-400 cursor-not-allowed">
+                    <i class="fa-solid fa-users-gear w-6"></i> Usuarios <span class="ml-auto text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">Próx</span>
                 </a>
             </nav>
 
-            <div class="p-4 border-t border-gray-700">
+            <div class="p-4 border-t border-gray-700 bg-gray-900">
                 <div class="flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold">A</div>
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-sm font-bold shadow-inner">A</div>
                     <div class="ml-3">
-                        <p class="text-sm font-medium">Administrador</p>
-                        <a href="#" onclick="logout()" class="text-xs text-gray-400 hover:text-white transition-colors">Cerrar sesión</a>
+                        <p class="text-sm font-medium text-white">Administrador</p>
+                        <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300 transition-colors mt-0.5 flex items-center">
+                            <i class="fa-solid fa-right-from-bracket mr-1"></i> Cerrar sesión
+                        </button>
                     </div>
                 </div>
             </div>
         </aside>
 
         <!-- Contenido Principal -->
-        <main class="flex-1 flex flex-col overflow-hidden bg-gray-50 relative">
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50 h-full relative">
+            
             <!-- Header top -->
             <header class="bg-white shadow-sm z-10 border-b border-gray-200">
-                <div class="px-8 py-4 flex justify-between items-center">
-                    <h2 id="page-title" class="text-2xl font-semibold text-gray-800">Panel General</h2>
+                <div class="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="mr-4 lg:hidden text-gray-600 hover:text-primary focus:outline-none transition">
+                            <i class="fa-solid fa-bars text-xl"></i>
+                        </button>
+                        <h2 id="page-title" class="text-xl lg:text-2xl font-semibold text-gray-800 truncate">Panel General</h2>
+                    </div>
                     <div class="flex items-center space-x-4">
-                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded border border-blue-400">Ciclo Lectivo 2026</span>
+                        <!-- Selector de Año Lectivo -->
+                        <div class="hidden sm:flex items-center text-sm text-gray-600 mr-2">
+                            <i class="fa-regular fa-calendar mr-2"></i> Ciclo:
+                        </div>
+                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 font-medium shadow-sm">
+                            <option value="2026" selected>2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
                     </div>
                 </div>
             </header>
 
-            <!-- VISTAS DEL CONTENIDO -->
-            <div class="flex-1 overflow-y-auto p-8">
+            <!-- VISTAS DEL CONTENIDO (Scrollable area) -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 
                 <!-- Vista: Dashboard -->
                 <div id="view-dashboard" class="tab-content block">
-                    <!-- Tarjetas de resumen -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
-                            <div class="p-4 rounded-full bg-blue-50 text-primary mr-4">
+                    
+                    <!-- Tarjetas de resumen (Responsivas) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-8">
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center hover:shadow-md transition-shadow">
+                            <div class="p-4 rounded-full bg-blue-50 text-primary mr-4 flex-shrink-0">
                                 <i class="fa-solid fa-ticket text-2xl"></i>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 font-medium">Bonos Emitidos</p>
-                                <p class="text-3xl font-bold text-gray-800">1,000</p>
+                                <p class="text-2xl lg:text-3xl font-bold text-gray-800">1,000</p>
                             </div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
-                            <div class="p-4 rounded-full bg-green-50 text-green-600 mr-4">
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center hover:shadow-md transition-shadow">
+                            <div class="p-4 rounded-full bg-green-50 text-green-600 mr-4 flex-shrink-0">
                                 <i class="fa-solid fa-check-circle text-2xl"></i>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 font-medium">Bonos Asignados</p>
-                                <p class="text-3xl font-bold text-gray-800">845</p>
+                                <p class="text-2xl lg:text-3xl font-bold text-gray-800">845</p>
                             </div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center">
-                            <div class="p-4 rounded-full bg-yellow-50 text-yellow-600 mr-4">
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center sm:col-span-2 lg:col-span-1 hover:shadow-md transition-shadow">
+                            <div class="p-4 rounded-full bg-yellow-50 text-yellow-600 mr-4 flex-shrink-0">
                                 <i class="fa-solid fa-sack-dollar text-2xl"></i>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 font-medium">Recaudación Total</p>
-                                <p class="text-3xl font-bold text-gray-800">$4.5M</p>
+                                <p class="text-2xl lg:text-3xl font-bold text-gray-800">$4,500,000</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Información Adicional -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Atención: Regla de Devolución</h3>
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <!-- Información Adicional y Reglas -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Atención: Regla de Devolución</h3>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-md">
                             <div class="flex">
-                                <div class="flex-shrink-0"><i class="fa-solid fa-triangle-exclamation text-yellow-400"></i></div>
+                                <div class="flex-shrink-0"><i class="fa-solid fa-triangle-exclamation text-yellow-500 mt-1"></i></div>
                                 <div class="ml-3">
-                                    <p class="text-sm text-yellow-700">
-                                        De acuerdo a las normativas del sistema: <strong>Si un alumno ha registrado al menos un pago (cuota) sobre un bono, este NO puede ser devuelto al inventario.</strong> Quedará registrado como impago parcial y mantendrá la asignación a dicho alumno. Use el campo <em>Observaciones</em> para justificaciones.
+                                    <p class="text-sm text-yellow-800 leading-relaxed">
+                                        De acuerdo a las normativas del sistema: <strong>Si un alumno ha registrado al menos un pago (cuota) sobre un bono, este NO puede ser devuelto al inventario general.</strong> Quedará registrado como impago parcial y mantendrá la asignación a dicho alumno. Use el campo <em>Observaciones</em> para registrar las justificaciones pertinentes.
                                     </p>
                                 </div>
                             </div>
@@ -190,75 +247,92 @@
 
                 <!-- Vista: Alumnos y Bonos -->
                 <div id="view-alumnos" class="tab-content hidden">
-                    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                            <h3 class="text-lg font-semibold text-gray-800">Directorio de Alumnos (6to Secundaria)</h3>
-                            <div class="flex space-x-2">
-                                <input type="text" placeholder="Buscar alumno..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                                <button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition"><i class="fa-solid fa-plus mr-2"></i>Asignar Bono</button>
+                    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden flex flex-col h-full">
+                        
+                        <!-- Barra de herramientas Alumnos -->
+                        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 gap-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Directorio de Alumnos</h3>
+                            <div class="flex flex-col sm:flex-row w-full sm:w-auto space-y-2 sm:space-y-0 sm:space-x-2">
+                                <div class="relative w-full sm:w-64">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fa-solid fa-search text-gray-400"></i>
+                                    </div>
+                                    <input type="text" placeholder="Buscar por DNI o Apellido..." class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+                                </div>
+                                <button class="w-full sm:w-auto bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition shadow-sm flex justify-center items-center">
+                                    <i class="fa-solid fa-plus mr-2"></i> Asignar Bono
+                                </button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-gray-500 uppercase bg-gray-100">
+                        
+                        <!-- Tabla Responsive -->
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-sm text-left whitespace-nowrap">
+                                <thead class="text-xs text-gray-500 uppercase bg-gray-100 border-b border-gray-200">
                                     <tr>
-                                        <th class="px-6 py-3">Alumno</th>
-                                        <th class="px-6 py-3">Curso</th>
-                                        <th class="px-6 py-3 text-center">Bonos Históricos (Meta: 11)</th>
-                                        <th class="px-6 py-3">Bono Actual (2026)</th>
-                                        <th class="px-6 py-3">Estado Actual</th>
-                                        <th class="px-6 py-3 text-right">Acciones</th>
+                                        <th class="px-6 py-3 font-semibold">Alumno</th>
+                                        <th class="px-6 py-3 font-semibold">Curso</th>
+                                        <th class="px-6 py-3 text-center min-w-[150px] font-semibold">Historial (1 a 11)</th>
+                                        <th class="px-6 py-3 font-semibold">Bono (Actual)</th>
+                                        <th class="px-6 py-3 font-semibold">Estado</th>
+                                        <th class="px-6 py-3 font-semibold text-right">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
-                                    <!-- Fila Demo 1 -->
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 font-medium text-gray-900">Pérez, Juan Ignacio</td>
-                                        <td class="px-6 py-4 text-gray-500">6° A - Secundaria</td>
-                                        <td class="px-6 py-4 text-center">
-                                            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                                <div class="bg-green-600 h-2.5 rounded-full" style="width: 100%"></div>
-                                            </div>
-                                            <span class="text-xs text-gray-500 mt-1">11/11 completados</span>
+                                    <tr class="hover:bg-blue-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="font-medium text-gray-900">Pérez, Juan Ignacio</div>
+                                            <div class="text-xs text-gray-500">DNI: 45.123.456</div>
                                         </td>
-                                        <td class="px-6 py-4"><span class="font-mono bg-gray-100 px-2 py-1 rounded">#0145</span></td>
-                                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Pagado Total</span></td>
+                                        <td class="px-6 py-4 text-gray-600">6° A - Sec.</td>
+                                        <td class="px-6 py-4 text-center">
+                                            <div class="w-full bg-gray-200 rounded-full h-2.5 shadow-inner">
+                                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-500 mt-1 inline-block font-medium">11/11 completados</span>
+                                        </td>
+                                        <td class="px-6 py-4"><span class="font-mono bg-gray-100 px-2 py-1 rounded border border-gray-300 shadow-sm text-gray-800">#0145</span></td>
+                                        <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-full border border-green-200">Pagado Total</span></td>
                                         <td class="px-6 py-4 text-right">
-                                            <button class="text-blue-600 hover:text-blue-900 mx-1" title="Ver Historial"><i class="fa-solid fa-eye"></i></button>
+                                            <button class="text-gray-500 hover:text-primary mx-1 p-1 transition" title="Ver Observaciones y Trazabilidad"><i class="fa-solid fa-eye text-lg"></i></button>
                                         </td>
                                     </tr>
-                                    <!-- Fila Demo 2 -->
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 font-medium text-gray-900">Gómez, María Laura</td>
-                                        <td class="px-6 py-4 text-gray-500">6° B - Secundaria</td>
+                                    <tr class="hover:bg-blue-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="font-medium text-gray-900">Gómez, María Laura</div>
+                                            <div class="text-xs text-gray-500">DNI: 46.987.654</div>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-600">6° B - Sec.</td>
                                         <td class="px-6 py-4 text-center">
-                                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                            <div class="w-full bg-gray-200 rounded-full h-2.5 shadow-inner">
                                                 <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 90%"></div>
                                             </div>
-                                            <span class="text-xs text-gray-500 mt-1">10/11 completados</span>
+                                            <span class="text-xs text-gray-500 mt-1 inline-block font-medium">10/11 completados</span>
                                         </td>
-                                        <td class="px-6 py-4"><span class="font-mono bg-gray-100 px-2 py-1 rounded">#0892</span></td>
-                                        <td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Pago Parcial</span></td>
+                                        <td class="px-6 py-4"><span class="font-mono bg-gray-100 px-2 py-1 rounded border border-gray-300 shadow-sm text-gray-800">#0892</span></td>
+                                        <td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2.5 py-1 rounded-full border border-yellow-200">Pago Parcial</span></td>
                                         <td class="px-6 py-4 text-right">
-                                            <button class="text-blue-600 hover:text-blue-900 mx-1" title="Ver Historial"><i class="fa-solid fa-eye"></i></button>
-                                            <button class="text-red-600 hover:text-red-900 mx-1 opacity-50 cursor-not-allowed" title="No se puede devolver (Tiene pagos)"><i class="fa-solid fa-rotate-left"></i></button>
+                                            <button class="text-gray-500 hover:text-primary mx-1 p-1 transition" title="Ver Observaciones"><i class="fa-solid fa-eye text-lg"></i></button>
+                                            <button class="text-gray-300 cursor-not-allowed mx-1 p-1" title="No se puede devolver (Tiene pagos)"><i class="fa-solid fa-rotate-left text-lg"></i></button>
                                         </td>
                                     </tr>
-                                    <!-- Fila Demo 3 -->
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 font-medium text-gray-900">Martínez, Tomás</td>
-                                        <td class="px-6 py-4 text-gray-500">6° A - Secundaria</td>
-                                        <td class="px-6 py-4 text-center">
-                                            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                                <div class="bg-green-600 h-2.5 rounded-full" style="width: 100%"></div>
-                                            </div>
-                                            <span class="text-xs text-gray-500 mt-1">11/11 completados</span>
+                                    <tr class="hover:bg-blue-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="font-medium text-gray-900">Martínez, Tomás</div>
+                                            <div class="text-xs text-gray-500">DNI: 45.654.321</div>
                                         </td>
-                                        <td class="px-6 py-4"><span class="font-mono bg-gray-100 px-2 py-1 rounded">#0333</span></td>
-                                        <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">Impago</span></td>
+                                        <td class="px-6 py-4 text-gray-600">6° A - Sec.</td>
+                                        <td class="px-6 py-4 text-center">
+                                            <div class="w-full bg-gray-200 rounded-full h-2.5 shadow-inner">
+                                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-500 mt-1 inline-block font-medium">11/11 completados</span>
+                                        </td>
+                                        <td class="px-6 py-4"><span class="font-mono bg-gray-100 px-2 py-1 rounded border border-gray-300 shadow-sm text-gray-800">#0333</span></td>
+                                        <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded-full border border-red-200">Impago</span></td>
                                         <td class="px-6 py-4 text-right">
-                                            <button class="text-blue-600 hover:text-blue-900 mx-1" title="Ver Historial"><i class="fa-solid fa-eye"></i></button>
-                                            <button class="text-red-600 hover:text-red-900 mx-1" title="Devolver Bono"><i class="fa-solid fa-rotate-left"></i></button>
+                                            <button class="text-gray-500 hover:text-primary mx-1 p-1 transition" title="Ver Observaciones"><i class="fa-solid fa-eye text-lg"></i></button>
+                                            <button class="text-red-500 hover:text-red-700 mx-1 p-1 transition" title="Devolver Bono al Inventario" onclick="mostrarAlerta('¿Devolver bono #0333?', 'Este bono no tiene pagos, se puede devolver y asignar a otro alumno.')"><i class="fa-solid fa-rotate-left text-lg"></i></button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -269,81 +343,87 @@
 
                 <!-- Vista: Pagos -->
                 <div id="view-pagos" class="tab-content hidden">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <!-- Formulario de Pago -->
-                        <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-6 lg:col-span-1">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Registrar Nuevo Pago</h3>
-                            <form class="space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                        
+                        <!-- Formulario de Pago (Ocupa 1 columna en PC, arriba en móvil) -->
+                        <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-6 lg:col-span-1 h-fit order-1">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex items-center">
+                                <i class="fa-solid fa-cash-register text-primary mr-2"></i> Registrar Pago
+                            </h3>
+                            <form class="space-y-4" onsubmit="event.preventDefault(); mostrarAlerta('Pago Registrado', 'El pago ha sido procesado correctamente.');">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Nº de Bono</label>
-                                    <input type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" placeholder="Ej: 0145">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nº de Bono Asignado</label>
+                                    <input type="text" class="block w-full px-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm font-mono" placeholder="Ej: 0145" required>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Monto (Cuota)</label>
-                                    <div class="mt-1 relative rounded-md shadow-sm">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Monto (Cuota / Total)</label>
+                                    <div class="relative rounded-md shadow-sm">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500 sm:text-sm">$</span>
+                                            <span class="text-gray-500 font-medium">$</span>
                                         </div>
-                                        <input type="number" class="block w-full pl-7 px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary sm:text-sm" placeholder="0.00">
+                                        <input type="number" class="block w-full pl-8 px-3 py-2.5 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm" placeholder="0.00" required>
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Método de Pago</label>
-                                    <select class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-                                        <option>Efectivo</option>
-                                        <option>Tarjeta de Crédito/Débito</option>
-                                        <option>Transferencia</option>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                                    <select class="block w-full px-3 py-2.5 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm" required>
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta">Tarjeta de Crédito / Débito</option>
+                                        <option value="transferencia">Transferencia Bancaria</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Observaciones</label>
-                                    <textarea rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" placeholder="Notas sobre el pago..."></textarea>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones (Requerido)</label>
+                                    <textarea rows="3" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm" placeholder="Detalle del pago, quién abonó, justificaciones..." required></textarea>
                                 </div>
-                                <button type="button" class="w-full bg-green-600 text-white font-medium py-2 px-4 rounded-md shadow hover:bg-green-700 transition">
-                                    Registrar Pago y Generar Recibo
+                                <button type="submit" class="w-full bg-green-600 text-white font-medium py-3 px-4 rounded-md shadow-sm hover:bg-green-700 focus:ring-4 focus:ring-green-200 transition-all flex justify-center items-center">
+                                    <i class="fa-solid fa-check mr-2"></i> Procesar y Crear Recibo
                                 </button>
                             </form>
                         </div>
                         
-                        <!-- Lista de últimos pagos -->
-                        <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-0 lg:col-span-2 overflow-hidden flex flex-col">
-                            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                                <h3 class="text-lg font-semibold text-gray-800">Últimos Pagos Registrados</h3>
+                        <!-- Lista de últimos pagos (Ocupa 2 columnas en PC) -->
+                        <div class="bg-white shadow-sm rounded-xl border border-gray-200 lg:col-span-2 overflow-hidden flex flex-col h-fit order-2">
+                            <div class="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                                <h3 class="text-lg font-semibold text-gray-800">Historial de Recibos Recientes</h3>
                             </div>
-                            <div class="overflow-x-auto flex-1">
-                                <table class="w-full text-sm text-left">
-                                    <thead class="text-xs text-gray-500 uppercase bg-gray-100">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left whitespace-nowrap">
+                                    <thead class="text-xs text-gray-500 uppercase bg-gray-100 border-b border-gray-200">
                                         <tr>
-                                            <th class="px-6 py-3">Fecha</th>
-                                            <th class="px-6 py-3">Bono</th>
-                                            <th class="px-6 py-3">Monto</th>
-                                            <th class="px-6 py-3">Método</th>
-                                            <th class="px-6 py-3 text-right">Recibo</th>
+                                            <th class="px-6 py-3 font-semibold">Fecha</th>
+                                            <th class="px-6 py-3 font-semibold">Bono</th>
+                                            <th class="px-6 py-3 font-semibold">Monto</th>
+                                            <th class="px-6 py-3 font-semibold">Método</th>
+                                            <th class="px-6 py-3 font-semibold text-right">Recibo</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200">
-                                        <tr>
-                                            <td class="px-6 py-4 text-gray-500">24 Jun 2026</td>
-                                            <td class="px-6 py-4 font-mono">#0145</td>
-                                            <td class="px-6 py-4 font-medium text-green-600">$50,000</td>
-                                            <td class="px-6 py-4">Transferencia</td>
+                                        <tr class="hover:bg-blue-50 transition-colors">
+                                            <td class="px-6 py-4 text-gray-600">24 Jun 2026</td>
+                                            <td class="px-6 py-4 font-mono font-medium">#0145</td>
+                                            <td class="px-6 py-4 font-bold text-gray-900">$50,000</td>
+                                            <td class="px-6 py-4 text-gray-600"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs border border-blue-100">Transferencia</span></td>
                                             <td class="px-6 py-4 text-right">
-                                                <button class="text-gray-500 hover:text-green-600 mx-1" title="Enviar WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></button>
-                                                <button class="text-gray-500 hover:text-primary mx-1" title="Imprimir PDF"><i class="fa-solid fa-print text-lg"></i></button>
+                                                <button class="text-gray-400 hover:text-green-600 mx-2 transition-colors transform hover:scale-110" title="Enviar WhatsApp"><i class="fa-brands fa-whatsapp text-xl"></i></button>
+                                                <button class="text-gray-400 hover:text-red-600 mx-2 transition-colors transform hover:scale-110" title="Descargar PDF"><i class="fa-solid fa-file-pdf text-xl"></i></button>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <td class="px-6 py-4 text-gray-500">23 Jun 2026</td>
-                                            <td class="px-6 py-4 font-mono">#0892</td>
-                                            <td class="px-6 py-4 font-medium text-green-600">$20,000</td>
-                                            <td class="px-6 py-4">Efectivo</td>
+                                        <tr class="hover:bg-blue-50 transition-colors">
+                                            <td class="px-6 py-4 text-gray-600">23 Jun 2026</td>
+                                            <td class="px-6 py-4 font-mono font-medium">#0892</td>
+                                            <td class="px-6 py-4 font-bold text-gray-900">$20,000</td>
+                                            <td class="px-6 py-4 text-gray-600"><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs border border-gray-200">Efectivo</span></td>
                                             <td class="px-6 py-4 text-right">
-                                                <button class="text-gray-500 hover:text-green-600 mx-1" title="Enviar WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></button>
-                                                <button class="text-gray-500 hover:text-primary mx-1" title="Imprimir PDF"><i class="fa-solid fa-print text-lg"></i></button>
+                                                <button class="text-gray-400 hover:text-green-600 mx-2 transition-colors transform hover:scale-110" title="Enviar WhatsApp"><i class="fa-brands fa-whatsapp text-xl"></i></button>
+                                                <button class="text-gray-400 hover:text-red-600 mx-2 transition-colors transform hover:scale-110" title="Descargar PDF"><i class="fa-solid fa-file-pdf text-xl"></i></button>
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="p-4 bg-gray-50 border-t border-gray-200 text-center">
+                                <a href="#" class="text-sm text-primary font-medium hover:underline">Ver historial completo</a>
                             </div>
                         </div>
                     </div>
@@ -353,67 +433,125 @@
         </main>
     </div>
 
+    <!-- Modal Personalizado (Reemplaza a alert()) -->
+    <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300" id="modal-content">
+            <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-2">Notificación</h3>
+            <p id="modal-body" class="text-sm text-gray-600 mb-6">Mensaje del sistema.</p>
+            <div class="flex justify-end">
+                <button onclick="cerrarAlerta()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Script de Lógica Frontend -->
     <script>
-        // Simulación de Login para la maqueta
-        function loginDemo() {
-            document.getElementById('login-view').classList.remove('active');
+        // Manejo del menú lateral (Responsivo)
+        const sidebar = document.getElementById('sidebar');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+
+        function toggleSidebar() {
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+            if (isClosed) {
+                sidebar.classList.remove('-translate-x-full');
+                mobileOverlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                mobileOverlay.classList.add('hidden');
+            }
+        }
+
+        // Sistema de Alertas personalizado
+        function mostrarAlerta(titulo, mensaje) {
+            document.getElementById('modal-title').innerText = titulo;
+            document.getElementById('modal-body').innerText = mensaje;
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            
+            modal.classList.remove('hidden');
+            // Pequeño delay para animar la escala
             setTimeout(() => {
-                document.getElementById('login-view').style.display = 'none';
-                document.getElementById('app-view').classList.add('active');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function cerrarAlerta() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // Simulación de Login
+        function loginDemo() {
+            const loginView = document.getElementById('login-view');
+            loginView.style.opacity = '0'; // Animación de fade out
+            
+            setTimeout(() => {
+                loginView.classList.remove('active');
+                loginView.style.display = 'none';
+                
+                const appView = document.getElementById('app-view');
+                appView.classList.add('active');
+                setTimeout(() => { appView.style.opacity = '1'; }, 50);
             }, 300);
         }
 
         // Simulación de Logout
         function logout() {
-            document.getElementById('app-view').classList.remove('active');
-            document.getElementById('login-view').style.display = 'flex';
+            const appView = document.getElementById('app-view');
+            appView.style.opacity = '0';
+            
             setTimeout(() => {
-                document.getElementById('login-view').classList.add('active');
-            }, 50);
+                appView.classList.remove('active');
+                
+                const loginView = document.getElementById('login-view');
+                loginView.style.display = 'flex';
+                setTimeout(() => {
+                    loginView.classList.add('active');
+                    loginView.style.opacity = '1';
+                }, 50);
+            }, 300);
         }
 
-        // Lógica de navegación del Sidebar
+        // Lógica de navegación mediante Pestañas (Tabs)
         function switchTab(tabId) {
             // Ocultar todas las vistas
             document.querySelectorAll('.tab-content').forEach(el => {
                 el.classList.add('hidden');
                 el.classList.remove('block');
             });
-            // Quitar clase active de los botones
+            // Quitar clase active visual
             document.querySelectorAll('.sidebar-item').forEach(el => {
                 el.classList.remove('active');
+                el.classList.remove('border-l-4'); // Por si usamos el borde dinámicamente
             });
 
             // Mostrar vista seleccionada
-            document.getElementById('view-' + tabId).classList.remove('hidden');
-            document.getElementById('view-' + tabId).classList.add('block');
+            const selectedView = document.getElementById('view-' + tabId);
+            selectedView.classList.remove('hidden');
+            selectedView.classList.add('block');
+            
+            // Marcar botón activo
             document.getElementById('nav-' + tabId).classList.add('active');
 
-            // Actualizar título
+            // Actualizar título de cabecera
             const titles = {
                 'dashboard': 'Panel General',
                 'alumnos': 'Gestión de Alumnos y Bonos',
-                'pagos': 'Gestión de Pagos y Recibos'
+                'pagos': 'Registro de Pagos y Recibos'
             };
             document.getElementById('page-title').innerText = titles[tabId];
-        }
 
-        /* 
-        === INSTRUCCIONES DE CONEXIÓN CON SUPABASE ===
-        1. Descomenta el código de abajo
-        2. Reemplaza 'TU_SUPABASE_URL' y 'TU_SUPABASE_ANON_KEY'
-        
-        const supabaseUrl = 'https://TU_SUPABASE_URL.supabase.co';
-        const supabaseKey = 'TU_SUPABASE_ANON_KEY';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-        
-        // Ejemplo de consulta:
-        async function getAlumnos() {
-            let { data: alumnos, error } = await supabase.from('alumnos').select('*');
-            console.log(alumnos);
+            // En dispositivos móviles, ocultar el sidebar automáticamente al clickear
+            if (window.innerWidth < 1024 && !sidebar.classList.contains('-translate-x-full')) {
+                toggleSidebar();
+            }
         }
-        */
     </script>
 </body>
 </html>
