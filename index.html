@@ -2,70 +2,80 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Bonos - Colegio</title>
+    <title>Sistema de Gestión de Bonos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-blue-900 text-white p-4 flex justify-between">
-        <div class="font-bold">Sistema de Bonos</div>
-        <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-3 py-1 rounded text-sm">Cerrar Sesión</button>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold">Gestión Escolar</h1>
+        <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-4 py-1 rounded">Cerrar Sesión</button>
     </nav>
 
-    <main class="p-6 max-w-4xl mx-auto">
-        <div id="login-box" class="bg-white p-8 rounded shadow max-w-md mx-auto">
-            <img src="./bonobachi.png" class="mb-4 rounded">
-            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-2">
+    <div id="app" class="max-w-5xl mx-auto mt-10 p-6">
+        <div id="auth-view" class="bg-white p-8 rounded shadow-lg max-w-md mx-auto">
+            <img src="./bonobachi.png" class="w-full mb-6 rounded">
+            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-3">
             <input type="password" id="pass" placeholder="Contraseña" class="w-full border p-2 mb-4">
-            <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded">Ingresar</button>
+            <button onclick="login()" class="w-full bg-blue-600 text-white py-2 mb-2 rounded">Ingresar</button>
+            <button onclick="toggleRegister()" class="text-blue-500 text-sm">¿No tienes cuenta? Regístrate aquí</button>
         </div>
 
-        <div id="admin-box" class="hidden">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <button onclick="showConfig()" class="bg-white p-4 shadow rounded">Configuración</button>
-                <button onclick="showAssign()" class="bg-white p-4 shadow rounded">Asignar Bono</button>
-                <button onclick="showVincular()" class="bg-white p-4 shadow rounded border-2 border-blue-500">Vincular Padre-Hijo</button>
-                <button onclick="showInformes()" class="bg-white p-4 shadow rounded">Informes</button>
+        <div id="main-view" class="hidden">
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <button onclick="showModule('config')" class="bg-white p-4 shadow rounded">1. Configuración</button>
+                <button onclick="showModule('import')" class="bg-white p-4 shadow rounded">2. Importar CSV</button>
+                <button onclick="showModule('assign')" class="bg-white p-4 shadow rounded">3. Asignar Bonos</button>
+                <button onclick="showModule('payments')" class="bg-white p-4 shadow rounded border-2 border-green-500">4. Pagos/Informes</button>
             </div>
-            <div id="admin-content" class="bg-white p-6 rounded shadow"></div>
+            <div id="content" class="bg-white p-8 rounded shadow"></div>
         </div>
-    </main>
+    </div>
 
     <script>
         const supabase = supabase.createClient('https://nujjafazakbcokxmcadm.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg');
 
         async function login() {
-            const { error } = await supabase.auth.signInWithPassword({
-                email: document.getElementById('email').value,
-                password: document.getElementById('pass').value
-            });
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            const { error } = await supabase.auth.signInWithPassword({email, password: pass});
             if(error) alert(error.message); else location.reload();
         }
 
+        async function toggleRegister() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            const name = prompt("Nombre Completo:");
+            const { error } = await supabase.auth.signUp({
+                email, password: pass, options: { data: { full_name: name, role: 'parent' } }
+            });
+            if(error) alert(error.message); else alert("Registro exitoso, inicia sesión");
+        }
+
+        async function showModule(mod) {
+            const el = document.getElementById('content');
+            if(mod === 'payments') {
+                el.innerHTML = `
+                    <h2 class="text-xl font-bold mb-4">Buscar por Bono o Alumno</h2>
+                    <input type="text" id="search" placeholder="Nº de bono, DNI o Nombre" class="border p-2 w-full mb-4">
+                    <button onclick="performSearch()" class="bg-green-600 text-white px-4 py-2 rounded">Buscar</button>
+                    <div id="results" class="mt-4"></div>
+                `;
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('search').value;
+            const { data, error } = await supabase.from('bonds').select('*, students(first_name, last_name, dni)').ilike('bond_number', `%${query}%`);
+            document.getElementById('results').innerHTML = JSON.stringify(data);
+        }
+
         async function logout() { await supabase.auth.signOut(); location.reload(); }
-
-        // VINCULACIÓN PADRE-HIJO
-        async function showVincular() {
-            document.getElementById('admin-content').innerHTML = `
-                <h3 class="font-bold mb-4">Vincular Padre a Alumno</h3>
-                <input type="text" id="parent-id" placeholder="ID (UUID) del Padre" class="w-full border p-2 mb-2">
-                <input type="text" id="student-id" placeholder="ID (UUID) del Alumno" class="w-full border p-2 mb-2">
-                <button onclick="vincular()" class="bg-blue-600 text-white px-4 py-2 rounded">Realizar Vinculación</button>
-            `;
-        }
-
-        async function vincular() {
-            const pId = document.getElementById('parent-id').value;
-            const sId = document.getElementById('student-id').value;
-            const { error } = await supabase.from('parent_students').insert({ parent_id: pId, student_id: sId });
-            if(error) alert(error.message); else alert('Vinculado con éxito');
-        }
-
-        // CHEQUEO SESIÓN
-        supabase.auth.onAuthStateChange((event, session) => {
-            if(session) {
-                document.getElementById('login-box').classList.add('hidden');
-                document.getElementById('admin-box').classList.remove('hidden');
+        
+        supabase.auth.onAuthStateChange((e, s) => {
+            if(s) {
+                document.getElementById('auth-view').classList.add('hidden');
+                document.getElementById('main-view').classList.remove('hidden');
                 document.getElementById('logout-btn').classList.remove('hidden');
             }
         });
