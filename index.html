@@ -51,31 +51,31 @@
 <body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col md:flex-row overflow-hidden">
 
     <!-- ==================== PANTALLA DE LOGIN ==================== -->
-    <div id="login-view" class="active view-section fixed inset-0 z-50 flex bg-white overflow-hidden">
+    <div id="login-view" class="active view-section fixed inset-0 z-50 flex flex-col lg:flex-row bg-white overflow-hidden">
         
-        <!-- Lado izquierdo: Imagen y Branding (Oculto en móviles, visible en pantallas grandes) -->
-        <div class="hidden lg:flex lg:w-1/2 bg-gray-100 flex-col justify-center items-center relative overflow-hidden">
+        <!-- Lado superior/izquierdo: Imagen y Branding -->
+        <div class="flex flex-col justify-center items-center relative overflow-hidden h-1/3 min-h-[180px] lg:min-h-0 lg:h-auto w-full lg:w-1/2 bg-gray-100">
+            <img src="bonobachi.png" alt="Bono Contribución Viaje de Peregrinación" class="absolute inset-0 w-full h-full object-cover z-0">
             <div class="absolute inset-0 bg-primary opacity-80 mix-blend-multiply z-10"></div>
-            <!-- IMAGEN SOLICITADA -->
-            <img src="bonobachi.png" alt="Bono Contribución Viaje de Peregrinación" class="absolute inset-0 w-full h-full object-cover z-0" onerror="this.src='https://placehold.co/1920x1080/1e3a8a/ffffff?text=Bono+Contribución'">
-            <div class="relative z-20 text-center px-12">
-                <h1 class="text-5xl font-bold text-white mb-6 tracking-tight shadow-sm" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.8);">
+            <div class="relative z-20 text-center px-4 lg:px-12">
+                <h1 class="text-2xl sm:text-3xl lg:text-5xl font-bold text-white mb-2 lg:mb-6 tracking-tight shadow-sm" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
                     Bono Contribución<br>Viaje de Peregrinación
                 </h1>
-                <p class="text-xl text-gray-200 drop-shadow-md">Sistema Integral de Gestión y Trazabilidad</p>
+                <p class="hidden sm:block text-sm lg:text-xl text-gray-200">Sistema Integral de Gestión y Trazabilidad</p>
             </div>
         </div>
         
-        <!-- Lado derecho: Formulario (Con scroll vertical si la pantalla es muy baja) -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-8 bg-white shadow-[0_0_40px_rgba(0,0,0,0.1)] z-30 overflow-y-auto">
-            <div class="w-full max-w-md py-8">
-                <div class="text-center mb-10">
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-primary mb-4 shadow-sm">
-                        <i class="fa-solid fa-ticket text-3xl"></i>
+        <!-- Lado inferior/derecho: Formulario -->
+        <div class="w-full lg:w-1/2 flex flex-col p-6 md:p-8 bg-white shadow-[0_0_40px_rgba(0,0,0,0.1)] z-30 overflow-y-auto h-2/3 lg:h-full">
+            <div class="w-full max-w-md m-auto py-4 lg:py-8">
+                <div class="text-center mb-8 lg:mb-10">
+                    <div class="inline-flex items-center justify-center w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-blue-100 text-primary mb-4">
+                        <i class="fa-solid fa-ticket text-2xl lg:text-3xl"></i>
                     </div>
-                    <!-- Título visible solo en móviles -->
-                    <h1 class="text-2xl font-bold text-primary lg:hidden mb-4">Bono Contribución<br>Viaje de Peregrinación</h1>
-                    
+                    <h2 class="text-2xl lg:text-3xl font-bold text-gray-900">Iniciar Sesión</h2>
+                    <p class="text-sm text-gray-500 mt-2">Ingresa tus credenciales para continuar</p>
+                </div>
+                <form id="login-form" class="space-y-6">
                     <h2 class="text-3xl font-bold text-gray-900">Iniciar Sesión</h2>
                     <p class="text-sm text-gray-500 mt-2">Ingresa tus credenciales para continuar</p>
                 </div>
