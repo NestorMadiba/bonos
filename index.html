@@ -2,98 +2,73 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Bonos Contribución</title>
+    <title>Gestión de Bonos - Colegio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans">
-
-    <nav class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
-        <div class="text-xl font-bold">Gestión Escolar - Bonos</div>
-        <div id="user-menu" class="hidden flex gap-4 items-center">
-            <span id="user-name-display" class="text-sm font-medium"></span>
-            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition">Cerrar Sesión</button>
-        </div>
+<body class="bg-gray-100">
+    <nav class="bg-blue-900 text-white p-4 flex justify-between">
+        <div class="font-bold">Sistema de Bonos</div>
+        <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-3 py-1 rounded text-sm">Cerrar Sesión</button>
     </nav>
 
-    <main class="container mx-auto p-6 max-w-6xl">
-        <div id="alert-container" class="mb-4"></div>
+    <main class="p-6 max-w-4xl mx-auto">
+        <div id="login-box" class="bg-white p-8 rounded shadow max-w-md mx-auto">
+            <img src="./bonobachi.png" class="mb-4 rounded">
+            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-2">
+            <input type="password" id="pass" placeholder="Contraseña" class="w-full border p-2 mb-4">
+            <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded">Ingresar</button>
+        </div>
 
-        <section id="admin-section" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <button onclick="window.location.reload()" class="bg-white p-4 shadow rounded border-b-4 border-blue-500 font-bold">1. Configuración</button>
-                <button onclick="showModule('import')" class="bg-white p-4 shadow rounded border-b-4 border-blue-500 font-bold">2. Importación CSV</button>
-                <button onclick="showModule('assign')" class="bg-white p-4 shadow rounded border-b-4 border-blue-500 font-bold">3. Asignar Bonos</button>
-                <button onclick="showModule('payments')" class="bg-green-100 p-4 shadow rounded border-b-4 border-green-600 font-bold text-green-900">4. Pagos e Informes</button>
+        <div id="admin-box" class="hidden">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <button onclick="showConfig()" class="bg-white p-4 shadow rounded">Configuración</button>
+                <button onclick="showAssign()" class="bg-white p-4 shadow rounded">Asignar Bono</button>
+                <button onclick="showVincular()" class="bg-white p-4 shadow rounded border-2 border-blue-500">Vincular Padre-Hijo</button>
+                <button onclick="showInformes()" class="bg-white p-4 shadow rounded">Informes</button>
             </div>
-
-            <div id="dynamic-content" class="bg-white p-6 rounded-lg shadow-md min-h-[500px]">
-                <h2 class="text-2xl font-bold mb-4">Bienvenido al Panel de Administración</h2>
-                <p>Selecciona un módulo superior para gestionar datos.</p>
-            </div>
-        </section>
+            <div id="admin-content" class="bg-white p-6 rounded shadow"></div>
+        </div>
     </main>
 
     <script>
-        const supabaseClient = supabase.createClient('https://nujjafazakbcokxmcadm.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg');
+        const supabase = supabase.createClient('https://nujjafazakbcokxmcadm.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg');
 
-        async function showModule(type) {
-            const container = document.getElementById('dynamic-content');
-            
-            if (type === 'import') {
-                container.innerHTML = `
-                    <h2 class="text-xl font-bold mb-4">Importar Alumnos</h2>
-                    <input type="file" id="csv-file" accept=".csv" class="mb-4">
-                    <button onclick="processCSV()" class="bg-blue-600 text-white px-4 py-2 rounded">Importar Datos</button>
-                `;
-            } else if (type === 'payments') {
-                container.innerHTML = `
-                    <h2 class="text-xl font-bold mb-4">Pagos e Informes</h2>
-                    <div class="flex gap-2 mb-6">
-                        <input type="text" id="pay-search" placeholder="Buscar por Bono, DNI o Nombre..." class="flex-1 border p-2 rounded">
-                        <button onclick="searchRecords()" class="bg-green-600 text-white px-4 py-2 rounded">Buscar</button>
-                    </div>
-                    <div id="results-area"></div>
-                `;
+        async function login() {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: document.getElementById('email').value,
+                password: document.getElementById('pass').value
+            });
+            if(error) alert(error.message); else location.reload();
+        }
+
+        async function logout() { await supabase.auth.signOut(); location.reload(); }
+
+        // VINCULACIÓN PADRE-HIJO
+        async function showVincular() {
+            document.getElementById('admin-content').innerHTML = `
+                <h3 class="font-bold mb-4">Vincular Padre a Alumno</h3>
+                <input type="text" id="parent-id" placeholder="ID (UUID) del Padre" class="w-full border p-2 mb-2">
+                <input type="text" id="student-id" placeholder="ID (UUID) del Alumno" class="w-full border p-2 mb-2">
+                <button onclick="vincular()" class="bg-blue-600 text-white px-4 py-2 rounded">Realizar Vinculación</button>
+            `;
+        }
+
+        async function vincular() {
+            const pId = document.getElementById('parent-id').value;
+            const sId = document.getElementById('student-id').value;
+            const { error } = await supabase.from('parent_students').insert({ parent_id: pId, student_id: sId });
+            if(error) alert(error.message); else alert('Vinculado con éxito');
+        }
+
+        // CHEQUEO SESIÓN
+        supabase.auth.onAuthStateChange((event, session) => {
+            if(session) {
+                document.getElementById('login-box').classList.add('hidden');
+                document.getElementById('admin-box').classList.remove('hidden');
+                document.getElementById('logout-btn').classList.remove('hidden');
             }
-            // ... (Agregar lógica para 'assign' de forma similar)
-        }
-
-        async function searchRecords() {
-            const query = document.getElementById('pay-search').value;
-            const area = document.getElementById('results-area');
-            
-            // Consulta robusta: buscamos en bonos uniendo tablas de alumnos
-            const { data, error } = await supabaseClient
-                .from('bonds')
-                .select('*, students(first_name, last_name, dni), payments(amount, payment_date)');
-            
-            if (error) return console.error(error);
-
-            // Filtrado manual en el frontend para asegurar compatibilidad
-            const filtered = data.filter(b => 
-                b.bond_number.includes(query) || 
-                b.students.dni.includes(query) || 
-                b.students.first_name.toLowerCase().includes(query.toLowerCase())
-            );
-
-            area.innerHTML = filtered.length ? filtered.map(b => `
-                <div class="p-4 border rounded mb-2 flex justify-between">
-                    <div><strong>${b.students.first_name} ${b.students.last_name}</strong> - Bono ${b.bond_number}</div>
-                    <button onclick="alert('Funcionalidad de pago habilitada')" class="text-blue-600">Ver Detalles</button>
-                </div>
-            `).join('') : '<p>No se encontraron resultados.</p>';
-        }
-
-        async function processCSV() {
-            const file = document.getElementById('csv-file').files[0];
-            Papa.parse(file, { header: true, complete: async (res) => {
-                const { error } = await supabaseClient.from('students').insert(res.data);
-                if (error) alert(error.message); else alert('Importado correctamente');
-            }});
-        }
+        });
     </script>
 </body>
 </html>
