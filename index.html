@@ -2,78 +2,80 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de Gestión de Bonos</title>
+    <title>Gestión de Bonos Contribución</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <nav class="bg-blue-900 text-white p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold">Gestión Escolar</h1>
-        <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-4 py-1 rounded">Cerrar Sesión</button>
+<body class="bg-gray-100">
+    <nav class="bg-blue-900 text-white p-4 flex justify-between">
+        <div class="font-bold">Gestión Escolar - Bonos</div>
+        <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-3 py-1 rounded text-sm">Cerrar Sesión</button>
     </nav>
 
-    <div id="app" class="max-w-5xl mx-auto mt-10 p-6">
-        <div id="auth-view" class="bg-white p-8 rounded shadow-lg max-w-md mx-auto">
-            <img src="./bonobachi.png" class="w-full mb-6 rounded">
-            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-3">
+    <main class="p-6 max-w-4xl mx-auto">
+        <div id="auth-view" class="bg-white p-8 rounded shadow max-w-md mx-auto">
+            <img src="./bonobachi.png" class="mb-4 rounded">
+            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-2">
             <input type="password" id="pass" placeholder="Contraseña" class="w-full border p-2 mb-4">
-            <button onclick="login()" class="w-full bg-blue-600 text-white py-2 mb-2 rounded">Ingresar</button>
-            <button onclick="toggleRegister()" class="text-blue-500 text-sm">¿No tienes cuenta? Regístrate aquí</button>
+            <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded mb-2">Ingresar</button>
+            <button onclick="register()" class="text-blue-500 text-sm w-full text-center underline">¿No tienes cuenta? Regístrate</button>
         </div>
 
         <div id="main-view" class="hidden">
-            <div class="grid grid-cols-4 gap-4 mb-6">
-                <button onclick="showModule('config')" class="bg-white p-4 shadow rounded">1. Configuración</button>
-                <button onclick="showModule('import')" class="bg-white p-4 shadow rounded">2. Importar CSV</button>
-                <button onclick="showModule('assign')" class="bg-white p-4 shadow rounded">3. Asignar Bonos</button>
-                <button onclick="showModule('payments')" class="bg-white p-4 shadow rounded border-2 border-green-500">4. Pagos/Informes</button>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <button onclick="showModule('config')" class="bg-white p-4 shadow rounded hover:bg-gray-50">1. Config</button>
+                <button onclick="showModule('import')" class="bg-white p-4 shadow rounded hover:bg-gray-50">2. CSV</button>
+                <button onclick="showModule('assign')" class="bg-white p-4 shadow rounded hover:bg-gray-50">3. Asignar</button>
+                <button onclick="showModule('payments')" class="bg-green-100 p-4 shadow rounded border-2 border-green-500">4. Pagos/Informes</button>
             </div>
-            <div id="content" class="bg-white p-8 rounded shadow"></div>
+            <div id="content" class="bg-white p-6 rounded shadow min-h-[300px]">
+                <h2 class="font-bold text-xl">Panel de Administración</h2>
+                <p>Selecciona un módulo superior.</p>
+            </div>
         </div>
-    </div>
+    </main>
 
     <script>
         const supabase = supabase.createClient('https://nujjafazakbcokxmcadm.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg');
 
-        async function login() {
+        // Declaraciones Globales (para que el HTML las encuentre)
+        window.login = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('pass').value;
             const { error } = await supabase.auth.signInWithPassword({email, password: pass});
             if(error) alert(error.message); else location.reload();
-        }
+        };
 
-        async function toggleRegister() {
+        window.register = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('pass').value;
-            const name = prompt("Nombre Completo:");
-            const { error } = await supabase.auth.signUp({
-                email, password: pass, options: { data: { full_name: name, role: 'parent' } }
-            });
-            if(error) alert(error.message); else alert("Registro exitoso, inicia sesión");
-        }
+            const { error } = await supabase.auth.signUp({email, password: pass});
+            if(error) alert(error.message); else alert("Registro exitoso. Inicia sesión.");
+        };
 
-        async function showModule(mod) {
-            const el = document.getElementById('content');
+        window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
+
+        window.showModule = async (mod) => {
+            const content = document.getElementById('content');
             if(mod === 'payments') {
-                el.innerHTML = `
-                    <h2 class="text-xl font-bold mb-4">Buscar por Bono o Alumno</h2>
-                    <input type="text" id="search" placeholder="Nº de bono, DNI o Nombre" class="border p-2 w-full mb-4">
-                    <button onclick="performSearch()" class="bg-green-600 text-white px-4 py-2 rounded">Buscar</button>
+                content.innerHTML = `
+                    <h2 class="font-bold text-lg mb-4">Pagos e Informes</h2>
+                    <input type="text" id="search" placeholder="Nº Bono, DNI o Nombre" class="border p-2 w-full mb-2">
+                    <button onclick="searchData()" class="bg-green-600 text-white px-4 py-2 rounded">Buscar</button>
                     <div id="results" class="mt-4"></div>
                 `;
             }
-        }
+        };
 
-        async function performSearch() {
+        window.searchData = async () => {
             const query = document.getElementById('search').value;
-            const { data, error } = await supabase.from('bonds').select('*, students(first_name, last_name, dni)').ilike('bond_number', `%${query}%`);
-            document.getElementById('results').innerHTML = JSON.stringify(data);
-        }
+            const res = await supabase.from('bonds').select('*, students(first_name, last_name, dni)').ilike('bond_number', `%${query}%`);
+            document.getElementById('results').innerHTML = `<pre>${JSON.stringify(res.data, null, 2)}</pre>`;
+        };
 
-        async function logout() { await supabase.auth.signOut(); location.reload(); }
-        
-        supabase.auth.onAuthStateChange((e, s) => {
-            if(s) {
+        // Estado inicial
+        supabase.auth.getSession().then(({data}) => {
+            if(data.session) {
                 document.getElementById('auth-view').classList.add('hidden');
                 document.getElementById('main-view').classList.remove('hidden');
                 document.getElementById('logout-btn').classList.remove('hidden');
