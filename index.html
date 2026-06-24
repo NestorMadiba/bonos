@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Bonos Contribución</title>
+    <title>Gestión de Bonos - Acceso</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-100">
     <nav class="bg-blue-900 text-white p-4 flex justify-between">
-        <div class="font-bold">Gestión Escolar - Bonos</div>
+        <div class="font-bold">Gestión Escolar</div>
         <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-3 py-1 rounded text-sm">Cerrar Sesión</button>
     </nav>
 
@@ -22,23 +22,23 @@
         </div>
 
         <div id="main-view" class="hidden">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <button onclick="showModule('config')" class="bg-white p-4 shadow rounded hover:bg-gray-50">1. Config</button>
-                <button onclick="showModule('import')" class="bg-white p-4 shadow rounded hover:bg-gray-50">2. CSV</button>
-                <button onclick="showModule('assign')" class="bg-white p-4 shadow rounded hover:bg-gray-50">3. Asignar</button>
-                <button onclick="showModule('payments')" class="bg-green-100 p-4 shadow rounded border-2 border-green-500">4. Pagos/Informes</button>
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <button onclick="showModule('config')" class="bg-white p-4 shadow rounded">1. Config</button>
+                <button onclick="showModule('import')" class="bg-white p-4 shadow rounded">2. CSV</button>
+                <button onclick="showModule('assign')" class="bg-white p-4 shadow rounded">3. Asignar</button>
+                <button onclick="showModule('payments')" class="bg-green-100 p-4 shadow rounded border-2 border-green-500">4. Pagos</button>
             </div>
-            <div id="content" class="bg-white p-6 rounded shadow min-h-[300px]">
-                <h2 class="font-bold text-xl">Panel de Administración</h2>
-                <p>Selecciona un módulo superior.</p>
+            <div id="content" class="bg-white p-6 rounded shadow">
+                <h2 class="font-bold text-xl">Bienvenido al Panel</h2>
             </div>
         </div>
     </main>
 
     <script>
+        // Inicialización del cliente
         const supabase = supabase.createClient('https://nujjafazakbcokxmcadm.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg');
 
-        // Declaraciones Globales (para que el HTML las encuentre)
+        // Declaraciones explícitas en el objeto window para evitar ReferenceError
         window.login = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('pass').value;
@@ -53,24 +53,29 @@
             if(error) alert(error.message); else alert("Registro exitoso. Inicia sesión.");
         };
 
-        window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
+        window.logout = async () => { 
+            await supabase.auth.signOut(); 
+            location.reload(); 
+        };
 
-        window.showModule = async (mod) => {
+        window.showModule = (mod) => {
             const content = document.getElementById('content');
             if(mod === 'payments') {
                 content.innerHTML = `
                     <h2 class="font-bold text-lg mb-4">Pagos e Informes</h2>
-                    <input type="text" id="search" placeholder="Nº Bono, DNI o Nombre" class="border p-2 w-full mb-2">
+                    <input type="text" id="search" placeholder="Buscar..." class="border p-2 w-full mb-2">
                     <button onclick="searchData()" class="bg-green-600 text-white px-4 py-2 rounded">Buscar</button>
                     <div id="results" class="mt-4"></div>
                 `;
+            } else {
+                content.innerHTML = `<h2 class="font-bold text-lg">Módulo ${mod}</h2><p>En desarrollo.</p>`;
             }
         };
 
         window.searchData = async () => {
             const query = document.getElementById('search').value;
-            const res = await supabase.from('bonds').select('*, students(first_name, last_name, dni)').ilike('bond_number', `%${query}%`);
-            document.getElementById('results').innerHTML = `<pre>${JSON.stringify(res.data, null, 2)}</pre>`;
+            const { data } = await supabase.from('bonds').select('*, students(first_name, last_name)').ilike('bond_number', `%${query}%`);
+            document.getElementById('results').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
         };
 
         // Estado inicial
