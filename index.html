@@ -2,83 +2,79 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Bonos - Colegio</title>
+    <title>Gestión de Bonos Contribución - Panel Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-blue-900 text-white p-4 flex justify-between">
-        <div class="font-bold text-xl">Gestión Escolar - Bonos</div>
-        <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-4 py-1 rounded">Cerrar Sesión</button>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 flex justify-between items-center shadow-lg">
+        <h1 class="text-xl font-bold">Gestión Escolar - Bonos</h1>
+        <button id="logout-btn" onclick="logout()" class="hidden bg-red-600 px-4 py-2 rounded font-bold hover:bg-red-700">Cerrar Sesión</button>
     </nav>
 
-    <main class="max-w-6xl mx-auto p-6">
-        <div id="auth-view" class="bg-white p-8 rounded shadow max-w-md mx-auto">
-            <img src="./bonobachi.png" class="mb-4 rounded">
-            <input type="email" id="email" placeholder="Email" class="w-full border p-2 mb-2">
-            <input type="password" id="pass" placeholder="Contraseña" class="w-full border p-2 mb-4">
-            <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded mb-2">Ingresar</button>
-            <button onclick="register()" class="text-blue-500 underline w-full text-center">Registrarse</button>
+    <div id="app-container" class="max-w-6xl mx-auto p-6">
+        <div id="login-view" class="bg-white p-10 rounded-xl shadow-2xl max-w-md mx-auto mt-20">
+            <img src="./bonobachi.png" class="w-full mb-6 rounded">
+            <input type="email" id="email" placeholder="Email" class="w-full border p-3 mb-3 rounded">
+            <input type="password" id="pass" placeholder="Contraseña" class="w-full border p-3 mb-4 rounded">
+            <button onclick="login()" class="w-full bg-blue-600 text-white py-3 rounded font-bold mb-2">Ingresar</button>
         </div>
 
-        <div id="main-view" class="hidden">
-            <div class="grid grid-cols-4 gap-4 mb-6">
-                <button onclick="renderModule('config')" class="bg-white p-4 shadow rounded">Configuración</button>
-                <button onclick="renderModule('import')" class="bg-white p-4 shadow rounded">Importar CSV</button>
-                <button onclick="renderModule('assign')" class="bg-white p-4 shadow rounded">Asignar Bonos</button>
-                <button onclick="renderModule('payments')" class="bg-green-100 p-4 shadow rounded border-2 border-green-500">Pagos/Informes</button>
+        <div id="dashboard-view" class="hidden">
+            <div class="grid grid-cols-4 gap-4 mb-8">
+                <button onclick="loadModule('config')" class="bg-white p-4 shadow rounded hover:bg-blue-50 font-bold">1. Configuración</button>
+                <button onclick="loadModule('import')" class="bg-white p-4 shadow rounded hover:bg-blue-50 font-bold">2. Importar CSV</button>
+                <button onclick="loadModule('assign')" class="bg-white p-4 shadow rounded hover:bg-blue-50 font-bold">3. Asignar Bonos</button>
+                <button onclick="loadModule('payments')" class="bg-green-600 text-white p-4 shadow rounded font-bold">4. Pagos e Informes</button>
             </div>
-            <div id="content-area" class="bg-white p-6 rounded shadow min-h-[400px]"></div>
+            <div id="content-area" class="bg-white p-8 rounded shadow-lg min-h-[400px]">
+                <h2 class="text-2xl font-bold mb-4">Bienvenido</h2>
+                <p>Seleccione un módulo del menú superior para comenzar.</p>
+            </div>
         </div>
-    </main>
+    </div>
 
     <script>
-        const supabase = supabase.createClient('https://nujjafazakbcokxmcadm.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg');
+        // CLIENTE SUPABASE (Unico nombre para evitar conflictos)
+        const sb = supabase.createClient('https://nujjafazakbcokxmcadm.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amphZmF6YWtiY29reG1jYWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTk4NjUsImV4cCI6MjA5Nzc5NTg2NX0.Ym4eb1NAyspMFJruh6UTJUhT1xD5lVP0z9zWemI3cBg');
 
-        // Funciones Globales para evitar errores de referencia
+        // DECLARACIONES GLOBALES (Para evitar el error ReferenceError)
         window.login = async () => {
-            const { error } = await supabase.auth.signInWithPassword({
-                email: document.getElementById('email').value,
-                password: document.getElementById('pass').value
-            });
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            const { error } = await sb.auth.signInWithPassword({email, password: pass});
             if(error) alert(error.message); else location.reload();
         };
 
-        window.register = async () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            const { error } = await supabase.auth.signUp({email, password: pass});
-            if(error) alert(error.message); else alert("Registro exitoso.");
-        };
+        window.logout = async () => { await sb.auth.signOut(); location.reload(); };
 
-        window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
-
-        window.renderModule = async (mod) => {
+        window.loadModule = (mod) => {
             const area = document.getElementById('content-area');
             if(mod === 'payments') {
                 area.innerHTML = `
-                    <h2 class="font-bold text-xl mb-4">Buscador de Bonos y Alumnos</h2>
-                    <input type="text" id="search-input" class="border p-2 w-full mb-4" placeholder="Nº bono, DNI o Nombre...">
-                    <button onclick="searchAction()" class="bg-green-600 text-white px-4 py-2 rounded">Buscar</button>
+                    <h2 class="text-2xl font-bold mb-4">Módulo de Pagos e Informes</h2>
+                    <input type="text" id="search" placeholder="Nº Bono, DNI o Nombre" class="border p-2 w-full mb-4">
+                    <button onclick="searchData()" class="bg-green-600 text-white px-6 py-2 rounded">Buscar Registro</button>
                     <div id="results" class="mt-4"></div>
                 `;
             } else {
-                area.innerHTML = `<h2>Módulo ${mod} en construcción.</h2>`;
+                area.innerHTML = `<h2 class="text-2xl font-bold">Módulo ${mod}</h2><p>En desarrollo.</p>`;
             }
         };
 
-        window.searchAction = async () => {
-            const q = document.getElementById('search-input').value;
-            const { data } = await supabase.from('bonds').select('*, students(*)').ilike('bond_number', `%${q}%`);
-            document.getElementById('results').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        window.searchData = async () => {
+            const query = document.getElementById('search').value;
+            const res = await sb.from('bonds').select('*, students(*)').ilike('bond_number', `%${query}%`);
+            if(res.error) alert(res.error.message);
+            else document.getElementById('results').innerHTML = `<pre class="bg-gray-100 p-4">${JSON.stringify(res.data, null, 2)}</pre>`;
         };
 
-        // Estado inicial
-        supabase.auth.getSession().then(({data}) => {
+        // ESTADO INICIAL
+        sb.auth.getSession().then(({data}) => {
             if(data.session) {
-                document.getElementById('auth-view').classList.add('hidden');
-                document.getElementById('main-view').classList.remove('hidden');
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('dashboard-view').classList.remove('hidden');
                 document.getElementById('logout-btn').classList.remove('hidden');
             }
         });
